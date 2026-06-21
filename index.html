@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Cup 2026 Prediction League — Live Tracker</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#121c2e; --panel2:#16223a; --line:#22324f;
+    --txt:#e8eefc; --muted:#90a0bf; --accent:#37d39b; --accent2:#ffd23f;
+    --gold:#ffd23f; --silver:#cdd6e4; --bronze:#e0985a; --live:#ff5470; --chip:#1d2b46;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:linear-gradient(180deg,#0b1220,#0d1526 40%,#0b1220);color:var(--txt);min-height:100vh}
+  a{color:var(--accent)}
+  header.top{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;
+       align-items:center;gap:14px;background:rgba(11,18,32,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:30}
+  .title{font-size:20px;font-weight:800;letter-spacing:.3px}
+  .title small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:2px}
+  .grow{flex:1}
+  .btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:10px;
+       padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn.primary{background:var(--accent);color:#06281e;border-color:var(--accent)}
+  .btn.warn{border-color:#3a2a3a}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+        background:var(--panel);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .dot.ok{background:var(--accent)} .dot.err{background:var(--live)} .dot.live{background:var(--live);animation:pulse 1.1s infinite}
+  @keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+  .wrap{padding:18px 20px 60px;max-width:1280px;margin:0 auto}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}
+  .tab{padding:9px 15px;border-radius:10px;background:var(--panel);border:1px solid var(--line);
+       cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+  .tab.active{background:var(--panel2);color:#fff;border-color:var(--accent)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .card h2{margin:0 0 12px;font-size:15px;letter-spacing:.3px}
+  .muted{color:var(--muted)}
+  table.lg{width:100%;border-collapse:collapse;font-size:13px}
+  table.lg th,table.lg td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.lg thead th{background:var(--panel2);color:var(--muted);font-weight:700;
+       cursor:pointer;user-select:none;border-bottom:2px solid var(--line)}
+  table.lg th.name,table.lg td.name{text-align:left}
+  table.lg td.tot{font-weight:800;font-size:15px;color:var(--accent)}
+  table.lg tr.me td{background:rgba(55,211,155,.07)}
+  table.lg tr:hover td{background:rgba(255,255,255,.03)}
+  .rank{font-weight:800;width:34px}
+  .rank .mv{font-size:10px;margin-left:3px}
+  .up{color:var(--accent)} .down{color:var(--live)}
+  .r1 .rank{color:var(--gold)} .r2 .rank{color:var(--silver)} .r3 .rank{color:var(--bronze)}
+  .medal{margin-right:4px}
+  .fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+  .fx{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+  .fx .ft{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .fx .tnm{flex:1}
+  .fx .sc{font-weight:800;font-size:16px;min-width:54px;text-align:center}
+  .fx .meta{font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;gap:6px}
+  .fx.live{border-color:var(--live)}
+  .badge{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted)}
+  .badge.ft{background:rgba(55,211,155,.15);color:var(--accent)}
+  .badge.lv{background:rgba(255,84,112,.15);color:var(--live)}
+  .scin{width:38px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:7px;
+        padding:5px;text-align:center;font-size:14px;font-weight:700}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{padding:6px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--line);
+        cursor:pointer;font-size:12px;font-weight:600;color:var(--muted)}
+  .chip.on{background:var(--accent);color:#06281e;border-color:var(--accent)}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .field input,.field select{width:100%;max-width:340px;background:var(--bg);border:1px solid var(--line);
+        color:var(--txt);border-radius:9px;padding:9px;font-size:13px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  details.pl{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel2)}
+  details.pl summary{cursor:pointer;padding:10px 12px;font-weight:700;display:flex;justify-content:space-between}
+  details.pl .body{padding:0 12px 12px;font-size:12px}
+  .kv{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0}
+  .small{font-size:12px}
+  .note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);
+        border-radius:10px;padding:10px 12px;margin-bottom:12px}
+  .stagehead{font-size:13px;font-weight:700;margin:14px 0 7px;color:var(--accent2)}
+  .countpill{font-size:11px;color:var(--muted);margin-left:8px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  select.cmp{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px;font-size:13px}
+  table.rec{width:100%;border-collapse:collapse;font-size:12px}
+  table.rec th,table.rec td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+  table.rec th{color:var(--muted);font-weight:700}
+  table.rec td.l,table.rec th.l{text-align:left;white-space:normal}
+  .pts3{color:var(--accent2);font-weight:700} .pts8{color:var(--accent);font-weight:800} .pts0{color:var(--muted)}
+  .reccard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .rechead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .rechead .nm{font-size:18px;font-weight:800}
+  .rechead .pt{font-size:22px;font-weight:800;color:var(--accent)}
+  .pickrow{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+  #adminBtn.primary{background:var(--accent2);color:#2a2300;border-color:var(--accent2)}
+  @media(max-width:640px){
+    table.lg .hidem{display:none} .title{font-size:16px}
+    header.top{padding:11px 13px;gap:8px} .wrap{padding:14px 12px 60px}
+    .btn{padding:8px 11px;font-size:12px} .tab{padding:8px 12px;font-size:12px}
+    .pill{font-size:11px;padding:5px 9px} .grid2{grid-template-columns:1fr}
+    table.lg th,table.lg td{padding:9px 5px}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <div class="title">🏆 World Cup 2026 Prediction League<small>Live tracker · auto-scored · 26 players</small></div>
+  </div>
+  <div class="grow"></div>
+  <span class="pill"><span id="statusDot" class="dot"></span><span id="statusTxt">Connecting…</span></span>
+  <span class="pill" id="lastUpd">—</span>
+  <button class="btn" id="autoBtn">Auto-refresh: ON</button>
+  <button class="btn primary" id="refreshBtn">↻ Refresh now</button>
+  <button class="btn" id="exportBtn" style="display:none">💾 Save &amp; share</button>
+  <button class="btn" id="adminBtn">🔒 Admin</button>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="table">League Table</div>
+    <div class="tab" data-tab="records">Player Records</div>
+    <div class="tab admintab" data-tab="fixtures" style="display:none">Results ✏️</div>
+    <div class="tab admintab" data-tab="ko" style="display:none">Knockouts ✏️</div>
+    <div class="tab admintab" data-tab="bonus" style="display:none">Bonus &amp; Winner ✏️</div>
+  </div>
+
+  <section id="tab-table">
+    <div class="toolbar">
+      <label class="small muted">Highlight me:&nbsp;</label>
+      <select class="cmp" id="meSel"><option value="">— none —</option></select>
+      <span class="grow"></span>
+      <span class="pill"><span id="liveCount" class="dot live" style="display:none"></span><span id="prog"></span></span>
+    </div>
+    <div class="card" style="padding:6px 6px 2px;overflow:auto">
+      <table class="lg" id="leagueTbl">
+        <thead><tr>
+          <th>#</th><th class="name" data-sort="name">Player</th>
+          <th data-sort="group">Group</th>
+          <th class="hidem" data-sort="r32">R32</th>
+          <th class="hidem" data-sort="r16">R16</th>
+          <th class="hidem" data-sort="qf">QF</th>
+          <th class="hidem" data-sort="sf">SF</th>
+          <th class="hidem" data-sort="final">Final</th>
+          <th class="hidem" data-sort="winner">Win</th>
+          <th class="hidem" data-sort="bonus">Bonus</th>
+          <th data-sort="total">Total ▾</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="note">Group points update automatically from the live feed as matches finish (3 = correct result, 8 = exact score). Knockout, Winner and Bonus points use the answers you set on their tabs. Ties are broken by the final tiebreaker (closest first-card minute) once you enter it.</div>
+  </section>
+
+  <section id="tab-fixtures" style="display:none">
+    <div class="note"><b>Most reliable way to score:</b> enter results here. Free live feeds are patchy for this tournament (they may show played games as "scheduled"), so anything you enter is treated as the confirmed result and overrides the feed. Use <b>Bulk-enter</b> to paste a whole matchday in seconds.</div>
+    <div class="toolbar">
+      <button class="btn primary" id="bulkBtn">⌨ Bulk-enter results</button>
+      <button class="btn" id="editFx">✎ Edit individual scores</button>
+      <span class="muted small">The feed auto-fills whatever it has; your entries win.</span>
+    </div>
+    <div id="bulkPanel" class="card" style="display:none">
+      <h2>Paste results</h2>
+      <p class="small muted" style="margin:0 0 8px">One match per line: the match number, then the score (home–away). Examples:&nbsp; <code>1 2-0</code> &nbsp; <code>2: 2-1</code> &nbsp; <code>36 1-1</code></p>
+      <textarea id="bulkText" placeholder="1 2-0&#10;2 2-1&#10;3 1-1&#10;4 4-1&#10;..." style="width:100%;height:170px;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px;font-family:monospace;font-size:13px"></textarea>
+      <div style="margin-top:8px"><button class="btn primary" id="bulkApply">Apply results</button> <button class="btn" id="bulkClear">Clear all my entries</button> <span id="bulkMsg" class="small muted"></span></div>
+    </div>
+    <div id="fxByRound"></div>
+  </section>
+
+  <section id="tab-ko" style="display:none">
+    <div class="note">Tick the teams that <b>actually</b> reached each stage. Points: Reached R32 = 5 each · Last 16 = 8 · Quarter-final = 10 · Semi-final = 10 · Final = 15. Each player is scored on their own picks for that stage.</div>
+    <div class="card"><h2>Reached Round of 32 <span class="countpill" id="cR32"></span></h2><div class="chips" id="chipR32"></div></div>
+    <div class="card"><h2>Reached Last 16 <span class="countpill" id="cR16"></span></h2><div class="chips" id="chipR16"></div></div>
+    <div class="card"><h2>Quarter-finalists <span class="countpill" id="cQF"></span></h2><div class="chips" id="chipQF"></div></div>
+    <div class="card"><h2>Semi-finalists <span class="countpill" id="cSF"></span></h2><div class="chips" id="chipSF"></div></div>
+    <div class="card"><h2>Finalists <span class="countpill" id="cFIN"></span></h2><div class="chips" id="chipFIN"></div></div>
+  </section>
+
+  <section id="tab-bonus" style="display:none">
+    <div class="note">Enter the real answers as they become known — players are auto-awarded 10 points for each exact match. Total-goals checks each player's predicted range. The first-card minute is the tiebreaker (no points; closest wins).</div>
+    <div class="card grid2">
+      <div class="field"><label>🏆 Tournament Winner (20 pts)</label><select id="bWinner"></select></div>
+      <div class="field"><label>⚽ Team scoring most goals (10 pts)</label><select id="bMostGoals"></select></div>
+      <div class="field"><label>👟 Golden Boot — top scorer (10 pts)</label><input id="bTopScorer" placeholder="e.g. Kylian Mbappe"></div>
+      <div class="field"><label># Goals by top scorer (10 pts)</label><input id="bTopScorerGoals" type="number" placeholder="e.g. 8"></div>
+      <div class="field"><label>Total goals in tournament (10 pts — checks ranges)</label><input id="bTotalGoals" type="number" placeholder="e.g. 215"></div>
+      <div class="field"><label>Total red cards (10 pts)</label><input id="bRedCards" type="number" placeholder="e.g. 18"></div>
+      <div class="field"><label>⏱ Tiebreaker: actual first-card minute in Final</label><input id="bTiebreak" type="number" placeholder="e.g. 34"></div>
+    </div>
+    <div class="card"><h2>Top-scorer name match</h2><p class="small muted">Name spellings vary. After entering the Golden Boot winner above, tick anyone whose answer should count (close matches auto-tick).</p><div class="chips" id="scorerOverrides"></div></div>
+  </section>
+
+  <section id="tab-records" style="display:none">
+    <div class="toolbar">
+      <label class="small muted">View player:&nbsp;</label>
+      <select class="cmp" id="recSel"></select>
+    </div>
+    <div id="recDetail"></div>
+  </section>
+
+  <div class="note" style="margin-top:20px">
+    <b>Public view</b> shows the League Table and Player Records, with group scores updating live from the feed. <b>Admin</b> (top-right, password-protected) unlocks results, knockouts and bonus entry. After updating as admin, hit <b>💾 Save &amp; share</b> to download a copy with your results baked in, and send that to the league.
+  </div>
+</div>
+
+<script>
+const DATA = {"canon":["Algeria","Argentina","Australia","Austria","Belgium","Bosnia and Herzegovina","Brazil","Canada","Cape Verde","Colombia","Congo DR","Croatia","Curacao","Czechia","Ecuador","Egypt","England","France","Germany","Ghana","Haiti","Iran","Iraq","Ivory Coast","Japan","Jordan","Korea Republic","Mexico","Morocco","Netherlands","New Zealand","Norway","Panama","Paraguay","Portugal","Qatar","Saudi Arabia","Scotland","Senegal","South Africa","Spain","Sweden","Switzerland","Tunisia","Turkiye","USA","Uruguay","Uzbekistan"],"aliasExtra":{"korea":"Korea Republic","southkorea":"Korea Republic","southkoera":"Korea Republic","korearepublic":"Korea Republic","czech":"Czechia","czechrep":"Czechia","czechrepublic":"Czechia","bosnia":"Bosnia and Herzegovina","bosniaherz":"Bosnia and Herzegovina","bosniaherzegovina":"Bosnia and Herzegovina","boznia":"Bosnia and Herzegovina","drcongo":"Congo DR","congodr":"Congo DR","democraticrepublicofthecongo":"Congo DR","cotedivoire":"Ivory Coast","cotedlvoire":"Ivory Coast","colimbia":"Colombia","columbia":"Colombia","belguim":"Belgium","eygpt":"Egypt","eygypt":"Egypt","equador":"Ecuador","holland":"Netherlands","netherland":"Netherlands","morroco":"Morocco","paragray":"Paraguay","saudi":"Saudi Arabia","senagal":"Senegal","swedan":"Sweden","sweeden":"Sweden","swiss":"Switzerland","turkey":"Turkiye","trkiye":"Turkiye","unitedstates":"USA","uragray":"Uruguay","capeverde":"Cape Verde","newzealand":"New Zealand","southafrica":"South Africa","saudiarabia":"Saudi Arabia"},"fixtures":[{"n":1,"home":"Mexico","away":"South Africa","label":"Mexico vs South Africa"},{"n":2,"home":"Korea Republic","away":"Czechia","label":"Korea Republic vs Czechia"},{"n":3,"home":"Canada","away":"Bosnia and Herzegovina","label":"Canada vs Bosnia and Herzegovina"},{"n":4,"home":"USA","away":"Paraguay","label":"USA vs Paraguay"},{"n":5,"home":"Haiti","away":"Scotland","label":"Haiti vs Scotland"},{"n":6,"home":"Australia","away":"Turkiye","label":"Australia vs Turkiye"},{"n":7,"home":"Brazil","away":"Morocco","label":"Brazil vs Morocco"},{"n":8,"home":"Qatar","away":"Switzerland","label":"Qatar vs Switzerland"},{"n":9,"home":"Ivory Coast","away":"Ecuador","label":"Ivory Coast vs Ecuador"},{"n":10,"home":"Germany","away":"Curacao","label":"Germany vs Curacao"},{"n":11,"home":"Netherlands","away":"Japan","label":"Netherlands vs Japan"},{"n":12,"home":"Sweden","away":"Tunisia","label":"Sweden vs Tunisia"},{"n":13,"home":"Saudi Arabia","away":"Uruguay","label":"Saudi Arabia vs Uruguay"},{"n":14,"home":"Spain","away":"Cape Verde","label":"Spain vs Cape Verde"},{"n":15,"home":"Iran","away":"New Zealand","label":"Iran vs New Zealand"},{"n":16,"home":"Belgium","away":"Egypt","label":"Belgium vs Egypt"},{"n":17,"home":"France","away":"Senegal","label":"France vs Senegal"},{"n":18,"home":"Iraq","away":"Norway","label":"Iraq vs Norway"},{"n":19,"home":"Argentina","away":"Algeria","label":"Argentina vs Algeria"},{"n":20,"home":"Austria","away":"Jordan","label":"Austria vs Jordan"},{"n":21,"home":"Ghana","away":"Panama","label":"Ghana vs Panama"},{"n":22,"home":"England","away":"Croatia","label":"England vs Croatia"},{"n":23,"home":"Portugal","away":"Congo DR","label":"Portugal vs Congo DR"},{"n":24,"home":"Uzbekistan","away":"Colombia","label":"Uzbekistan vs Colombia"},{"n":25,"home":"Czechia","away":"South Africa","label":"Czechia vs South Africa"},{"n":26,"home":"Switzerland","away":"Bosnia and Herzegovina","label":"Switzerland vs Bosnia and Herzegovina"},{"n":27,"home":"Canada","away":"Qatar","label":"Canada vs Qatar"},{"n":28,"home":"Mexico","away":"Korea Republic","label":"Mexico vs Korea Republic"},{"n":29,"home":"Brazil","away":"Haiti","label":"Brazil vs Haiti"},{"n":30,"home":"Scotland","away":"Morocco","label":"Scotland vs Morocco"},{"n":31,"home":"Turkiye","away":"Paraguay","label":"Turkiye vs Paraguay"},{"n":32,"home":"USA","away":"Australia","label":"USA vs Australia"},{"n":33,"home":"Germany","away":"Ivory Coast","label":"Germany vs Ivory Coast"},{"n":34,"home":"Ecuador","away":"Curacao","label":"Ecuador vs Curacao"},{"n":35,"home":"Netherlands","away":"Sweden","label":"Netherlands vs Sweden"},{"n":36,"home":"Tunisia","away":"Japan","label":"Tunisia vs Japan"},{"n":37,"home":"Uruguay","away":"Cape Verde","label":"Uruguay vs Cape Verde"},{"n":38,"home":"Spain","away":"Saudi Arabia","label":"Spain vs Saudi Arabia"},{"n":39,"home":"Belgium","away":"Iran","label":"Belgium vs Iran"},{"n":40,"home":"New Zealand","away":"Egypt","label":"New Zealand vs Egypt"},{"n":41,"home":"Norway","away":"Senegal","label":"Norway vs Senegal"},{"n":42,"home":"France","away":"Iraq","label":"France vs Iraq"},{"n":43,"home":"Argentina","away":"Austria","label":"Argentina vs Austria"},{"n":44,"home":"Jordan","away":"Algeria","label":"Jordan vs Algeria"},{"n":45,"home":"England","away":"Ghana","label":"England vs Ghana"},{"n":46,"home":"Panama","away":"Croatia","label":"Panama vs Croatia"},{"n":47,"home":"Portugal","away":"Uzbekistan","label":"Portugal vs Uzbekistan"},{"n":48,"home":"Colombia","away":"Congo DR","label":"Colombia vs Congo DR"},{"n":49,"home":"Scotland","away":"Brazil","label":"Scotland vs Brazil"},{"n":50,"home":"Morocco","away":"Haiti","label":"Morocco vs Haiti"},{"n":51,"home":"Switzerland","away":"Canada","label":"Switzerland vs Canada"},{"n":52,"home":"Bosnia and Herzegovina","away":"Qatar","label":"Bosnia and Herzegovina vs Qatar"},{"n":53,"home":"Czechia","away":"Mexico","label":"Czechia vs Mexico"},{"n":54,"home":"South Africa","away":"Korea Republic","label":"South Africa vs Korea Republic"},{"n":55,"home":"Curacao","away":"Ivory Coast","label":"Curacao vs Ivory Coast"},{"n":56,"home":"Ecuador","away":"Germany","label":"Ecuador vs Germany"},{"n":57,"home":"Japan","away":"Sweden","label":"Japan vs Sweden"},{"n":58,"home":"Tunisia","away":"Netherlands","label":"Tunisia vs Netherlands"},{"n":59,"home":"Turkiye","away":"USA","label":"Turkiye vs USA"},{"n":60,"home":"Paraguay","away":"Australia","label":"Paraguay vs Australia"},{"n":61,"home":"Norway","away":"France","label":"Norway vs France"},{"n":62,"home":"Senegal","away":"Iraq","label":"Senegal vs Iraq"},{"n":63,"home":"Egypt","away":"Iran","label":"Egypt vs Iran"},{"n":64,"home":"New Zealand","away":"Belgium","label":"New Zealand vs Belgium"},{"n":65,"home":"Cape Verde","away":"Saudi Arabia","label":"Cape Verde vs Saudi Arabia"},{"n":66,"home":"Uruguay","away":"Spain","label":"Uruguay vs Spain"},{"n":67,"home":"Panama","away":"England","label":"Panama vs England"},{"n":68,"home":"Croatia","away":"Ghana","label":"Croatia vs Ghana"},{"n":69,"home":"Algeria","away":"Austria","label":"Algeria vs Austria"},{"n":70,"home":"Jordan","away":"Argentina","label":"Jordan vs Argentina"},{"n":71,"home":"Colombia","away":"Portugal","label":"Colombia vs Portugal"},{"n":72,"home":"Congo DR","away":"Uzbekistan","label":"Congo DR vs Uzbekistan"}],"players":[{"name":"Brian Brock-Crowley","group":[[3,1],[2,1],[3,1],[2,0],[2,2],[1,1],[2,2],[1,4],[1,2],[8,0],[2,1],[2,0],[1,4],[8,0],[1,3],[2,2],[3,1],[0,3],[3,1],[4,0],[3,0],[2,0],[4,0],[0,3],[2,1],[2,2],[3,0],[3,2],[6,1],[1,3],[1,3],[3,1],[4,1],[3,1],[3,1],[1,3],[4,0],[5,0],[3,0],[1,4],[2,1],[6,0],[3,1],[3,3],[2,0],[0,3],[7,0],[3,0],[2,3],[4,0],[2,2],[3,1],[1,3],[1,3],[0,2],[1,3],[1,1],[1,3],[1,2],[2,1],[2,2],[3,1],[3,0],[0,4],[1,3],[2,4],[0,6],[2,3],[1,2],[0,5],[3,2],[2,1]],"r32":["Argentina","France","Spain","England","Brazil","Portugal","Germany","Netherlands","Belgium","Uruguay","Ghana","Morocco","Mexico","USA","Canada","Colombia","Japan","Korea Republic","Switzerland","Denmark","Norway","Sweden","Austria","Senegal","Egypt","Ecuador","Australia","Czechia","Scotland","Algeria","Paraguay","Turkiye"],"r16":["Spain","France","Argentina","England","Brazil","Portugal","Germany","Netherlands","Uruguay","Morocco","Colombia","Japan","Korea Republic","USA","Switzerland","Belgium"],"qf":["Spain","France","Argentina","England","Portugal","Morocco","Germany","USA"],"sf":["Spain","Germany","France","England"],"final":["Spain","England"],"winner":"England","bonus":{"mostGoalsTeam":"Germany","topScorer":"Kane","topScorerGoals":9.0,"totalGoalsRange":"250 +","redCards":8.0,"tiebreakMinute":38.0}},{"name":"Ian Parry","group":[[3,0],[1,2],[1,1],[2,1],[1,1],[0,2],[2,2],[1,3],[2,1],[4,1],[2,1],[2,0],[0,3],[3,0],[2,1],[2,1],[3,1],[0,2],[2,2],[4,0],[2,0],[3,1],[3,1],[1,2],[3,0],[2,1],[3,2],[0,0],[4,1],[1,2],[1,1],[2,1],[4,2],[2,0],[0,0],[1,3],[2,1],[4,0],[4,0],[1,1],[3,1],[6,0],[3,2],[1,3],[1,0],[0,2],[2,1],[1,1],[1,2],[3,0],[4,0],[2,0],[1,1],[0,2],[1,1],[2,3],[2,1],[1,3],[3,1],[1,0],[0,0],[2,0],[2,1],[0,3],[1,1],[0,1],[0,2],[1,1],[2,1],[0,3],[1,1],[2,2]],"r32":["Ecuador","USA","Mexico","Czechia","Switzerland","Bosnia and Herzegovina","Brazil","Morocco","Turkiye","Paraguay","Germany","Ivory Coast","Japan","Netherlands","Belgium","Egypt","Spain","Uruguay","France","Norway","Algeria","Argentina","Colombia","Portugal","England","Ghana","Croatia","Austria","Senegal","Sweden","Korea Republic","Scotland"],"r16":["Switzerland","Brazil","Turkiye","Netherlands","Belgium","Spain","France","Argentina","Portugal","England","Mexico","Morocco","Japan","Norway","Algeria","Colombia"],"qf":["England","Brazil","Spain","France","Turkiye","Netherlands","Algeria","Portugal"],"sf":["England","France","Spain","Netherlands"],"final":["Netherlands","Spain"],"winner":"Spain","bonus":{"mostGoalsTeam":"England","topScorer":"Charles De Ketelaere","topScorerGoals":7.0,"totalGoalsRange":"120 - 129","redCards":14.0,"tiebreakMinute":43.0}},{"name":"Darren Russell","group":[[3,0],[2,1],[1,1],[2,1],[0,3],[1,2],[2,1],[0,3],[2,1],[4,0],[1,1],[2,1],[0,2],[4,0],[1,1],[2,1],[3,1],[0,2],[2,0],[2,0],[2,0],[2,1],[3,0],[0,2],[2,0],[1,1],[3,0],[1,1],[4,0],[1,3],[2,1],[2,0],[2,1],[3,1],[2,1],[0,2],[3,0],[4,0],[3,0],[1,2],[1,1],[5,0],[3,0],[3,1],[3,0],[0,3],[4,0],[3,1],[1,2],[4,0],[1,2],[3,0],[1,1],[0,2],[1,3],[0,3],[3,0],[1,3],[2,1],[2,1],[1,3],[2,0],[2,0],[1,2],[2,1],[1,1],[0,4],[2,1],[2,0],[0,3],[1,1],[2,1]],"r32":["Korea Republic","Mexico","Bosnia and Herzegovina","Canada","Brazil","Morocco","USA","Turkiye","Germany","Ivory Coast","Japan","Netherlands","Belgium","Egypt","Spain","Uruguay","France","Norway","Argentina","Austria","Portugal","Colombia","England","Croatia","Czechia","Ecuador","Sweden","Senegal","Algeria","Scotland","Ghana","Switzerland"],"r16":["Mexico","Germany","Japan","Brazil","France","Ivory Coast","Korea Republic","England","USA","Belgium","Colombia","Spain","Bosnia and Herzegovina","Argentina","Portugal","Turkiye"],"qf":["Japan","France","Spain","England","Argentina","Portugal","Brazil","Netherlands"],"sf":["England","Spain","Argentina","France"],"final":["France","Spain"],"winner":"Spain","bonus":{"mostGoalsTeam":"England","topScorer":"Harry Kane","topScorerGoals":8.0,"totalGoalsRange":"210 - 219","redCards":18.0,"tiebreakMinute":34.0}},{"name":"Jamie Segar","group":[[4,1],[2,2],[3,0],[2,3],[0,2],[3,2],[1,0],[0,3],[2,3],[6,0],[2,3],[3,1],[0,3],[5,0],[1,2],[2,2],[3,2],[1,3],[3,1],[1,1],[2,2],[3,2],[4,0],[1,4],[3,2],[4,2],[3,1],[3,3],[7,0],[1,3],[2,3],[2,3],[6,1],[4,1],[3,3],[1,4],[4,1],[5,0],[3,1],[2,4],[2,2],[5,1],[4,1],[1,2],[6,0],[1,4],[4,0],[4,1],[1,3],[4,1],[2,2],[3,3],[1,2],[3,4],[1,4],[2,3],[3,2],[1,4],[1,2],[3,1],[3,4],[3,1],[2,1],[1,4],[1,1],[3,4],[1,6],[4,0],[3,4],[1,4],[2,3],[1,2]],"r32":["Mexico","Korea Republic","Canada","Switzerland","Brazil","Morocco","USA","Australia","Germany","Ecuador","Netherlands","Japan","Belgium","Egypt","Spain","Uruguay","France","Senegal","Argentina","Austria","Portugal","Colombia","England","Croatia","Czechia","Turkiye","Sweden","New Zealand","Norway","Algeria","Panama","Scotland"],"r16":["Germany","France","Korea Republic","Netherlands","Brazil","Senegal","Mexico","England","Croatia","Spain","USA","Belgium","Argentina","Australia","Switzerland","Portugal"],"qf":["France","Netherlands","Brazil","England","Spain","Belgium","Argentina","Portugal"],"sf":["France","Spain","England","Argentina"],"final":["England","France"],"winner":"England","bonus":{"mostGoalsTeam":"Spain","topScorer":"Harry Kane","topScorerGoals":9.0,"totalGoalsRange":"250 +","redCards":6.0,"tiebreakMinute":"4 minutes "}},{"name":"Lee Shortall","group":[[2,0],[1,1],[3,1],[1,0],[0,3],[0,2],[1,1],[1,2],[1,1],[4,0],[1,2],[2,1],[1,2],[3,0],[2,0],[3,1],[3,2],[1,3],[2,1],[2,0],[3,1],[2,1],[3,1],[0,2],[2,0],[2,1],[2,1],[2,1],[3,1],[1,2],[2,1],[2,0],[2,1],[3,0],[3,1],[2,2],[2,1],[2,0],[3,1],[0,1],[2,2],[3,0],[3,1],[0,2],[3,1],[0,2],[4,0],[3,0],[0,2],[3,0],[1,0],[1,0],[1,1],[0,1],[0,3],[1,1],[2,1],[1,2],[2,1],[2,1],[2,3],[3,0],[1,1],[0,3],[1,0],[1,2],[0,4],[1,1],[2,1],[0,3],[1,3],[2,0]],"r32":["Mexico","Czechia","Canada","Switzerland","Brazil","Morocco","USA","Turkiye","Germany","Ecuador","Netherlands","Japan","Belgium","Iran","Spain","Uruguay","France","Norway","Argentina","Austria","Portugal","Colombia","England","Croatia","Korea Republic","Scotland","Paraguay","Ivory Coast","Senegal","Algeria","Ghana","Sweden"],"r16":["Germany","France","Korea Republic","Morocco","Colombia","Spain","USA","Belgium","Brazil","Senegal","Mexico","England","Argentina","Turkiye","Switzerland","Portugal"],"qf":["France","Morocco","Spain","Belgium","Brazil","England","Argentina","Portugal"],"sf":["France","Spain","England","Portugal"],"final":["France","England"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Mbappe","topScorerGoals":9.0,"totalGoalsRange":"250 +","redCards":7.0,"tiebreakMinute":12.0}},{"name":"Lee Keeley","group":[[3,0],[1,1],[0,0],[2,0],[0,2],[1,3],[2,2],[0,3],[3,1],[5,0],[1,1],[2,1],[1,3],[5,0],[1,1],[1,1],[2,1],[1,2],[3,2],[3,0],[3,0],[3,1],[2,0],[0,2],[2,1],[2,1],[3,0],[3,1],[4,0],[1,1],[2,0],[2,1],[2,2],[2,0],[2,2],[0,2],[3,0],[6,0],[2,1],[1,1],[1,1],[4,0],[3,0],[0,3],[1,1],[1,3],[3,0],[3,0],[1,1],[3,0],[3,1],[1,0],[1,1],[0,0],[0,3],[1,3],[0,0],[1,2],[2,0],[0,2],[2,3],[3,0],[2,1],[0,2],[1,2],[2,2],[0,3],[2,1],[2,2],[0,3],[2,2],[2,2]],"r32":["Mexico","Korea Republic","Czechia","Switzerland","Bosnia and Herzegovina","Brazil","Morocco","Scotland","Turkiye","USA","Australia","Germany","Ivory Coast","Ecuador","Japan","Netherlands","Sweden","Belgium","Egypt","Norway","France","Senegal","Argentina","Algeria","Austria","Colombia","Portugal","England","Ghana","Croatia","Spain","Uruguay"],"r16":["Korea Republic","Germany","Japan","Brazil","Norway","France","Mexico","England","Turkiye","Belgium","Portugal","Spain","Switzerland","Argentina","Colombia","USA"],"qf":["Germany","Japan","France","England","Spain","Turkiye","Argentina","Colombia"],"sf":["Germany","Spain","France","Argentina"],"final":["Spain","France"],"winner":"Spain","bonus":{"mostGoalsTeam":"Spain","topScorer":"Yamal","topScorerGoals":8.0,"totalGoalsRange":"250 +","redCards":15.0,"tiebreakMinute":25.0}},{"name":"Kyle Cavey","group":[[1,1],[0,1],[1,1],[1,0],[0,1],[1,2],[2,0],[0,1],[1,1],[2,1],[1,0],[1,1],[1,2],[2,0],[0,0],[2,1],[2,0],[0,1],[2,0],[1,0],[1,1],[1,1],[2,0],[0,1],[1,1],[1,1],[1,1],[1,0],[2,0],[1,2],[1,0],[1,1],[2,0],[1,0],[2,1],[0,1],[1,0],[2,0],[2,0],[0,1],[2,1],[2,0],[2,1],[0,0],[2,1],[0,1],[2,0],[1,1],[0,2],[1,0],[1,1],[2,0],[2,1],[1,1],[0,2],[0,2],[0,1],null,[2,1],[0,0],[1,2],[1,1],[1,0],[1,2],[1,0],[0,2],[0,2],[2,0],[0,1],[0,2],[0,2],[1,0]],"r32":["Mexico","Czechia","Canada","Switzerland","Brazil","Morocco","Turkiye","USA","Germany","Ivory Coast","Netherlands","Sweden","Belgium","Sweden","Spain","Uruguay","France","Norway","Senegal","Argentina","Austria","Portugal","Congo DR","England","Croatia","Ghana","Scotland","Ecuador","Japan","Algeria","Colombia","Ghana"],"r16":["Spain","France","Argentina","England","Brazil","Portugal","Germany","Netherlands","Norway","Canada","Mexico","Switzerland","USA","Belgium","Turkiye","Colombia"],"qf":["Spain","France","Argentina","England","Portugal","Brazil","Netherlands","Colombia"],"sf":["Spain","France","England","Argentina"],"final":["Spain","England"],"winner":"Spain","bonus":{"mostGoalsTeam":"Spain","topScorer":"Mbappe","topScorerGoals":6.0,"totalGoalsRange":"250 +","redCards":15.0,"tiebreakMinute":9.0}},{"name":"David Broughton","group":[[3,1],[1,0],[0,2],[1,1],[1,3],[1,2],[3,0],[2,2],[2,1],[4,0],[2,0],[2,0],[1,3],[5,0],[1,1],[2,0],[2,1],[0,3],[2,0],[2,0],[2,2],[1,1],[3,0],[1,2],[1,0],[2,2],[1,1],[1,2],[5,0],[1,1],[2,1],[3,1],[2,0],[2,2],[2,1],[1,1],[2,0],[3,0],[2,1],[0,2],[2,0],[4,0],[3,1],[0,0],[2,0],[0,2],[1,0],[2,1],[0,3],[1,1],[0,0],[2,0],[1,1],[1,2],[0,4],[1,3],[1,1],[1,2],[1,2],[2,1],[1,1],[2,0],[2,2],[1,3],[0,0],[1,2],[1,4],[2,0],[1,1],[0,3],[1,2],[1,1]],"r32":["England","Mexico","USA","Argentina","Belgium","Brazil","Korea Republic","Switzerland","Qatar","Scotland","Turkiye","Germany","Ivory Coast","Netherlands","Sweden","Egypt","Spain","Uruguay","France","Norway","Algeria","Portugal","Colombia","Croatia","Czechia","Australia","Japan","Saudi Arabia","Senegal","Austria","Ghana","Iran"],"r16":["England","Spain","Brazil","Germany","Argentina","Mexico","Netherlands","France","USA","Belgium","Norway","Portugal","Colombia","Scotland","Croatia","Korea Republic"],"qf":["Spain","France","England","Brazil","Portugal","Argentina","Germany","Netherlands"],"sf":["France","Spain","Brazil","England"],"final":["France","Spain"],"winner":"France","bonus":{"mostGoalsTeam":"Brazil","topScorer":"Harry Kane","topScorerGoals":7.0,"totalGoalsRange":"180 - 189","redCards":15.0,"tiebreakMinute":17.0}},{"name":"Sergio Aguiar","group":[[2,0],[2,1],[2,1],[2,0],[0,3],[0,2],[3,2],[0,2],[0,1],[4,0],[2,1],[0,0],[0,3],[4,0],[0,1],[1,0],[3,1],[0,2],[2,0],[2,0],[2,0],[3,1],[5,0],[0,3],[1,1],[2,1],[3,0],[2,2],[4,0],[2,1],[1,1],[2,1],[3,1],[2,0],[2,2],[0,2],[2,0],[4,1],[2,0],[0,2],[1,1],[4,0],[3,2],[1,1],[2,0],[0,2],[3,0],[3,0],[1,2],[3,0],[0,0],[2,0],[0,2],[2,2],[0,2],[1,2],[1,2],[0,2],[1,1],[1,0],[0,3],[1,0],[2,0],[1,2],[1,1],[1,2],[0,3],[1,1],[0,1],[0,5],[1,3],[1,0]],"r32":["Mexico","Korea Republic","Canada","Switzerland","Brazil","Scotland","USA","Turkiye","Germany","Ecuador","Netherlands","Sweden","Belgium","Egypt","Spain","Uruguay","France","Norway","Argentina","Algeria","Portugal","Colombia","England","Croatia","Czechia","Bosnia and Herzegovina","Morocco","Paraguay","Ivory Coast","Japan","Ghana","Senegal"],"r16":["Mexico","Canada","Brazil","USA","Germany","Netherlands","Belgium","Spain","France","Argentina","Portugal","England","Colombia","Morocco","Ecuador","Korea Republic"],"qf":["Morocco","England","Portugal","Argentina","France","Spain","Belgium","Brazil"],"sf":["Spain","France","England","Portugal"],"final":["France","Portugal"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Spain","topScorer":"Cristiano Ronaldo","topScorerGoals":8.0,"totalGoalsRange":"190 - 199","redCards":8.0,"tiebreakMinute":21.0}},{"name":"David stancombe","group":[[2,0],[1,1],[2,1],[1,0],[0,2],[0,2],[3,1],[0,2],[0,1],[4,0],[1,0],[0,0],[0,2],[3,0],[0,1],[1,0],[3,1],[0,2],[2,0],[2,0],[2,0],[2,1],[4,0],[0,3],[1,1],[1,1],[3,0],[1,1],[4,0],[2,1],[0,0],[1,0],[2,2],[2,0],[1,1],[0,2],[2,0],[3,0],[2,0],[1,2],[1,2],[3,0],[2,0],[1,1],[1,0],[0,2],[3,0],[3,0],[1,3],[2,0],[0,0],[3,0],[0,1],[2,2],[0,3],[1,2],[1,2],[0,1],[1,1],[1,0],[0,3],[1,0],[2,0],[1,2],[1,1],[1,2],[0,3],[1,1],[0,1],[0,5],[1,3],[1,0]],"r32":["Mexico","Korea Republic","Canada","Switzerland","Brazil","Scotland","USA","Turkiye","Germany","Ecuador","Netherlands","Sweden","Belgium","Egypt","Spain","Uruguay","France","Norway","Argentina","Algeria","Portugal","Colombia","England","Croatia","Czechia","Bosnia and Herzegovina","Morocco","Paraguay","Ivory Coast","Japan","Ghana","Senegal"],"r16":["Mexico","Canada","Brazil","USA","Germany","Netherlands","Belgium","Spain","France","Argentina","Portugal","England","Colombia","Morocco","Ecuador","Korea Republic"],"qf":["Morocco","England","Portugal","Argentina","France","Spain","Belgium","Brazil"],"sf":["Spain","France","England","Portugal"],"final":["France","Portugal"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Spain","topScorer":"Harry Kane","topScorerGoals":7.0,"totalGoalsRange":"190 - 199","redCards":8.0,"tiebreakMinute":21.0}},{"name":"Antony Lambert-Mee","group":[[2,1],[2,2],[2,0],[2,1],[0,2],[1,3],[3,0],[1,2],[2,1],[4,1],[3,2],[2,0],[0,2],[3,0],[0,2],[2,0],[2,0],[1,3],[3,0],[2,1],[2,1],[2,1],[3,0],[1,2],[1,1],[1,0],[1,0],[2,0],[2,0],[2,1],[1,1],[2,1],[2,0],[1,0],[1,0],[0,0],[1,1],[3,0],[2,1],[0,1],[1,0],[2,0],[2,0],[0,0],[2,0],[0,1],[2,0],[2,0],[1,3],[2,0],[2,1],[1,1],[0,1],[2,2],[2,3],[2,4],[3,1],[1,3],[1,2],[0,2],[1,2],[2,0],[2,0],[0,2],[1,1],[1,3],[1,3],[1,1],[0,1],[0,3],[2,3],[0,0]],"r32":["England","Spain","Germany","France","Portugal","USA","Canada","Mexico","Argentina","Brazil","Belgium","Croatia","Colombia","Ivory Coast","Czechia","Egypt","Japan","Netherlands","Morocco","Norway","Scotland","Turkiye","Switzerland","Uruguay","Sweden","South Africa","Senegal","Morocco","Qatar","New Zealand","Paraguay","Korea Republic"],"r16":["Spain","England","Brazil","Netherlands","Portugal","Sweden","Germany","France","Japan","Egypt","Argentina","USA","Belgium","Norway","Uruguay","Mexico"],"qf":["Spain","England","Brazil","Netherlands","France","Germany","Argentina","Portugal"],"sf":["Argentina","England","France","Spain"],"final":["Spain","France"],"winner":"Spain","bonus":{"mostGoalsTeam":"Argentina","topScorer":"Kylian Mbappe","topScorerGoals":15.0,"totalGoalsRange":"110 - 119","redCards":6.0,"tiebreakMinute":15.0}},{"name":"Taz Spencer","group":[[1,1],[1,2],[1,1],[2,1],[1,2],[0,2],[3,1],[0,3],[2,1],[4,1],[3,2],[2,1],[1,2],[4,0],[1,1],[2,2],[3,1],[0,3],[2,0],[1,1],[2,0],[2,1],[3,0],[1,1],[2,2],[2,2],[2,1],[1,1],[4,0],[1,2],[2,2],[1,0],[1,0],[2,1],[1,1],[1,1],[3,0],[3,0],[2,0],[0,2],[1,1],[3,0],[2,0],[2,3],[3,0],[1,3],[2,0],[1,0],[1,2],[3,0],[3,1],[3,1],[2,2],[2,2],[1,3],[1,2],[1,1],[1,1],[2,0],[2,1],[1,2],[3,0],[2,0],[0,3],[2,2],[2,2],[0,3],[2,2],[1,1],[1,3],[2,2],[0,0]],"r32":["Mexico","Czechia","Switzerland","Bosnia and Herzegovina","Brazil","Morocco","USA","Turkiye","Germany","Ivory Coast","Sweden","Netherlands","Belgium","Egypt","Spain","Uruguay","France","Norway","Argentina","Austria","Portugal","Colombia","England","Croatia","Canada","Scotland","Ecuador","Japan","Senegal","Ghana","Algeria","Saudi Arabia"],"r16":["England","France","Brazil","Spain","Germany","Argentina","Turkiye","Morocco","Mexico","Netherlands","Croatia","Belgium","Paraguay","USA","Sweden","Egypt"],"qf":["England","Spain","Morocco","Brazil","Portugal","Uruguay","Turkiye","Germany"],"sf":["England","Portugal","Brazil","Argentina"],"final":["Portugal","Brazil"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Spain","topScorer":"C.Ronaldo","topScorerGoals":6.0,"totalGoalsRange":"190 - 199","redCards":12.0,"tiebreakMinute":18.0}},{"name":"Zach Conway","group":[[2,1],[0,1],[1,1],[1,0],[0,1],[0,2],[2,1],[0,1],[1,1],[2,0],[2,1],[1,0],[0,2],[3,0],[1,1],[2,1],[2,1],[0,2],[2,0],[1,0],[2,0],[2,1],[3,0],[0,2],[1,0],[1,0],[2,1],[2,1],[3,0],[1,1],[1,0],[2,1],[2,1],[2,0],[2,0],[1,1],[2,0],[2,0],[2,0],[1,2],[1,1],[2,0],[2,0],[0,1],[2,1],[0,2],[3,0],[2,1],[0,1],[2,0],[1,0],[1,1],[1,2],[1,1],[0,1],[1,1],[2,1],[1,2],[1,1],[1,0],[1,3],[2,0],[2,0],[1,2],[0,1],[1,2],[0,2],[1,1],[1,2],[0,3],[1,2],[1,0]],"r32":["Mexico","Sweden","Switzerland","Canada","Brazil","Morocco","Turkiye","USA","Germany","Ecuador","Netherlands","Japan","Belgium","Egypt","Spain","Uruguay","France","Senegal","Argentina","Austria","Portugal","Colombia","England","Croatia","Canada","Scotland","Paraguay","Ivory Coast","New Zealand","Norway","Algeria","Ghana"],"r16":["Mexico","Switzerland","Brazil","Turkiye","Germany","Netherlands","Belgium","Spain","France","Argentina","Portugal","England","Japan","Uruguay","Senegal","Croatia"],"qf":["Switzerland","Brazil","Netherlands","Spain","France","England","Uruguay","Senegal"],"sf":["Brazil","Spain","France","Senegal"],"final":["France","Spain"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Mbappe","topScorerGoals":7.0,"totalGoalsRange":"130 - 139","redCards":8.0,"tiebreakMinute":28.0}},{"name":"Kyle Lewis","group":[[2,0],[1,1],[1,1],[1,0],[0,2],[0,2],[2,1],[0,2],[1,1],[3,0],[2,0],[2,2],[0,2],[5,0],[0,0],[2,1],[3,1],[0,2],[2,1],[2,0],[2,0],[1,0],[3,0],[0,1],[1,0],[2,1],[1,0],[2,2],[4,0],[2,2],[1,1],[1,0],[2,1],[2,0],[2,1],[1,2],[2,0],[3,0],[3,0],[1,2],[2,2],[4,0],[2,1],[0,1],[1,0],[0,2],[2,0],[1,0],[2,3],[3,0],[2,0],[2,0],[0,1],[1,2],[0,3],[1,1],[1,1],[0,1],[2,1],[1,0],[1,3],[2,0],[2,1],[0,2],[2,2],[1,2],[0,4],[1,1],[1,1],[0,4],[1,2],[1,1]],"r32":["Germany","Paraguay","France","Sweden","Korea Republic","Bosnia and Herzegovina","Netherlands","Morocco","Brazil","Japan","Ecuador","Norway","Mexico","Scotland","England","Senegal","Colombia","Croatia","Spain","Austria","Turkiye","Canada","Belgium","Czechia","Argentina","Uruguay","USA","Egypt","Switzerland","Ivory Coast","Portugal","Ghana"],"r16":["Germany","France","Korea Republic","Netherlands","Brazil","Ecuador","Scotland","England","Croatia","Spain","Turkiye","Belgium","Argentina","USA","Switzerland","Portugal"],"qf":["France","Netherlands","Spain","Turkiye","Brazil","England","Argentina","Portugal"],"sf":["France","Spain","England","Portugal"],"final":["France","Portugal"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Spain","topScorer":"Mbappe","topScorerGoals":6.0,"totalGoalsRange":"160 - 169","redCards":7.0,"tiebreakMinute":57.0}},{"name":"Alex Williams","group":[[1,0],[1,1],[1,1],[2,1],[1,2],[0,2],[2,2],[0,3],[1,1],[4,0],[1,1],[2,0],[0,1],[6,0],[0,1],[3,2],[2,0],[1,4],[2,1],[2,0],[3,0],[1,1],[5,0],[0,2],[1,1],[2,2],[3,1],[3,2],[6,1],[1,2],[2,0],[3,1],[2,0],[1,1],[2,2],[0,1],[4,1],[4,0],[3,0],[0,2],[3,1],[5,0],[3,0],[0,2],[2,1],[0,3],[3,0],[2,0],[1,2],[4,0],[0,0],[3,1],[1,2],[2,2],[1,1],[0,1],[2,2],[0,1],[1,1],[2,1],[2,2],[3,0],[2,0],[0,3],[1,1],[1,2],[0,3],[2,1],[3,1],[0,4],[1,2],[3,2]],"r32":["Spain","Portugal","England","France","Curacao","Mexico","Korea Republic","Canada","Switzerland","Brazil","Morocco","Scotland","USA","Paraguay","Turkiye","Germany","Ivory Coast","Ecuador","Netherlands","Japan","Sweden","Belgium","Egypt","Uruguay","Senegal","Norway","Argentina","Algeria","Austria","Colombia","Croatia","Ghana"],"r16":["Switzerland","Mexico","Canada","Brazil","Morocco","USA","Turkiye","Germany","Netherlands","Japan","Sweden","Belgium","Spain","Uruguay","France","England"],"qf":["England","Brazil","Spain","France","Japan","Morocco","Argentina","Portugal"],"sf":["England","Portugal","Brazil","Morocco"],"final":["Portugal","Brazil"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Portugal","topScorer":"Harry Kane","topScorerGoals":6.0,"totalGoalsRange":"180 - 189","redCards":6.0,"tiebreakMinute":38.0}},{"name":"Joe Damen","group":[[2,0],[0,1],[1,1],[2,1],[0,2],[1,1],[3,1],[0,2],[1,1],[3,0],[1,2],[3,0],[0,2],[5,0],[0,0],[2,1],[3,1],[0,3],[2,0],[2,0],[2,0],[1,0],[4,0],[0,2],[1,0],[1,1],[2,0],[1,1],[4,0],[1,1],[1,1],[1,0],[3,1],[2,0],[2,2],[0,1],[3,0],[3,1],[3,0],[0,2],[2,1],[6,0],[3,1],[0,1],[2,0],[0,3],[2,0],[3,1],[0,3],[3,0],[1,1],[2,0],[1,1],[1,2],[1,3],[2,1],[2,2],[1,2],[2,1],[2,1],[1,1],[2,0],[1,0],[0,3],[1,2],[1,2],[0,2],[1,1],[1,1],[0,3],[2,2],[1,1]],"r32":["Mexico","Sweden","Switzerland","Czechia","Brazil","Morocco","USA","Turkiye","Germany","Ecuador","Netherlands","Sweden","Belgium","Egypt","Spain","Uruguay","France","Norway","Argentina","Austria","Portugal","Colombia","England","Croatia","Saudi Arabia","Korea Republic","Canada","Bosnia and Herzegovina","Algeria","Japan","Ivory Coast","Senegal"],"r16":["Brazil","Ecuador","Switzerland","Spain","France","Germany","England","Czechia","Netherlands","Colombia","Belgium","USA","Argentina","Egypt","Portugal","Mexico"],"qf":["France","England","Spain","Argentina","Portugal","Brazil","Belgium","Netherlands"],"sf":["Brazil","Spain","France","Argentina"],"final":["France","Brazil"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Mbappe","topScorerGoals":6.0,"totalGoalsRange":"230 - 239","redCards":8.0,"tiebreakMinute":"23rd"}},{"name":"Bobby Eyes","group":[[1,0],[0,2],[1,1],[3,1],[0,2],[1,2],[2,0],[0,3],[1,1],[4,0],[2,2],[1,0],[2,1],[3,0],[0,1],[1,1],[2,0],[0,5],[3,1],[2,0],[2,0],[2,1],[3,1],[1,3],[3,2],[0,0],[0,0],[3,1],[5,0],[2,2],[1,0],[3,1],[2,0],[3,0],[2,2],[1,2],[2,0],[2,1],[2,0],[1,3],[2,2],[5,0],[2,0],[0,0],[1,1],[0,4],[4,1],[1,1],[0,3],[3,2],[2,2],[3,0],[2,2],[1,1],[0,2],[1,3],[1,0],[0,4],[2,2],[2,0],[1,3],[3,0],[2,2],[0,4],[0,3],[1,2],[0,6],[2,0],[1,1],[0,3],[1,2],[3,1]],"r32":["Mexico","Czechia","Switzerland","Bosnia and Herzegovina","Brazil","Morocco","Scotland","USA","Turkiye","Germany","Ivory Coast","Netherlands","Japan","Belgium","Egypt","Spain","Saudi Arabia","Uruguay","France","Norway","Senegal","Argentina","Algeria","Portugal","Colombia","England","Croatia","Ghana","Austria","Ecuador","South Africa","Paraguay"],"r16":["Brazil","Mexico","USA","Senegal","Germany","Netherlands","Japan","Belgium","Spain","Uruguay","Croatia","France","Norway","Argentina","Portugal","England"],"qf":["France","Spain","Germany","Brazil","Argentina","England","Portugal","Senegal"],"sf":["France","Spain","England","Argentina"],"final":["Spain","France"],"winner":"Spain","bonus":{"mostGoalsTeam":"Spain","topScorer":"Haaland","topScorerGoals":6.0,"totalGoalsRange":"170 - 179","redCards":10.0,"tiebreakMinute":19.0}},{"name":"Martin Skillen","group":[[3,1],[2,1],[1,2],[2,1],[1,4],[0,2],[1,1],[0,2],[1,2],[7,0],[1,1],[3,0],[0,4],[6,0],[2,0],[2,1],[2,2],[1,2],[3,0],[3,0],[2,1],[3,0],[5,0],[0,4],[1,1],[2,0],[3,1],[3,2],[6,0],[2,2],[1,2],[2,2],[3,1],[4,0],[3,2],[1,2],[4,0],[4,0],[2,0],[0,2],[0,2],[3,0],[3,0],[1,2],[3,2],[0,2],[4,0],[5,0],[1,3],[4,0],[2,2],[1,1],[1,2],[1,2],[0,3],[1,1],[2,1],[1,3],[1,1],[2,1],[0,3],[2,0],[2,1],[1,3],[0,3],[2,2],[0,4],[3,2],[1,1],[0,2],[1,2],[1,2]],"r32":["England","Croatia","Scotland","Brazil","Morocco","France","Egypt","Spain","Uruguay","Germany","Belgium","Portugal","Netherlands","Colombia","Japan","USA","Mexico","Korea Republic","Argentina","Switzerland","Turkiye","Senegal","Norway","Uzbekistan","Algeria","Austria","Ghana","Iran","Sweden","Ivory Coast","Ecuador","Paraguay"],"r16":["England","Brazil","France","Argentina","Spain","Germany","Morocco","Netherlands","Senegal","Uruguay","Colombia","Portugal","Croatia","Mexico","Korea Republic","USA"],"qf":["England","Brazil","Argentina","France","Portugal","Senegal","Morocco","Spain"],"sf":["Spain","Portugal","Argentina","Senegal"],"final":["Portugal","Spain"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Portugal","topScorer":"Julian Alvarez","topScorerGoals":6.0,"totalGoalsRange":"170 - 179","redCards":7.0,"tiebreakMinute":9.0}},{"name":"Simon Helm","group":[[2,0],[1,0],[0,0],[1,1],[0,2],[1,3],[3,1],[1,3],[1,0],[4,0],[2,1],[0,0],[1,3],[5,0],[1,1],[0,0],[3,2],[0,2],[3,1],[1,1],[2,2],[0,0],[3,0],[0,2],[1,0],[1,0],[1,1],[1,0],[3,0],[0,0],[1,1],[2,2],[3,1],[2,2],[3,1],[1,2],[3,0],[1,0],[3,1],[0,2],[1,1],[3,0],[4,0],[0,0],[1,0],[0,3],[5,1],[2,1],[0,1],[2,0],[1,0],[0,0],[0,2],[0,2],[0,2],[0,3],[1,2],[0,3],[1,1],[2,1],[1,3],[2,0],[3,0],[1,2],[1,1],[1,2],[0,1],[1,0],[2,2],[0,1],[0,2],[1,1]],"r32":["Mexico","Canada","Canada","Switzerland","Brazil","Scotland","USA","Turkiye","Germany","Ivory Coast","Netherlands","Sweden","Belgium","Egypt","Spain","Uruguay","Norway","France","Argentina","Algeria","Portugal","Congo DR","England","Croatia","Ghana","Saudi Arabia","Japan","Paraguay","Czechia","Ecuador","Senegal","Morocco"],"r16":["Argentina","Belgium","Germany","Spain","England","France","Netherlands","Brazil","Morocco","USA","Czechia","Portugal","Croatia","Mexico","Turkiye","Austria"],"qf":["Brazil","England","Germany","Spain","France","Argentina","Portugal","Netherlands"],"sf":["Spain","France","Germany","Argentina"],"final":["Spain","Argentina"],"winner":"Spain","bonus":{"mostGoalsTeam":"Germany","topScorer":"Oyarzabal","topScorerGoals":5.0,"totalGoalsRange":"190 - 199","redCards":4.0,"tiebreakMinute":24.0}},{"name":"Rich Hillman","group":[[1,1],[2,0],[1,0],[2,0],[2,0],[3,1],[3,1],[2,1],[3,0],[3,0],[2,2],[2,1],[2,0],[3,0],[0,1],[1,1],[2,2],[0,2],[3,1],[3,0],[0,0],[2,0],[2,0],[0,1],[1,1],[2,0],[3,0],[1,3],[3,0],[1,2],[2,0],[1,1],[2,1],[3,0],[2,2],[0,2],[1,0],[4,0],[2,0],[0,2],[2,2],[2,0],[2,1],[0,1],[2,0],[0,2],[1,0],[1,1],[0,3],[1,0],[2,1],[1,0],[0,1],[1,2],[0,2],[2,1],[2,0],[0,2],[2,0],[1,1],[2,3],[3,0],[2,0],[0,1],[0,0],[0,2],[0,1],[1,1],[0,1],[0,3],[1,2],[0,0]],"r32":["Korea Republic","Sweden","Switzerland","Czechia","Brazil","Morocco","Paraguay","USA","Ecuador","Ivory Coast","Japan","Tunisia","Belgium","Senegal","Spain","Algeria","France","Turkiye","Argentina","Scotland","Colombia","Canada","England","Mexico","Germany","Netherlands","Egypt","Uruguay","Norway","Austria","Portugal","Croatia"],"r16":["Korea Republic","Switzerland","Brazil","USA","Ecuador","Japan","Senegal","Spain","France","Argentina","Canada","England","Netherlands","Uruguay","Norway","Portugal"],"qf":["Korea Republic","Brazil","Ecuador","Spain","Argentina","England","Netherlands","Norway"],"sf":["Brazil","Ecuador","Argentina","Norway"],"final":["Brazil","Argentina"],"winner":"Brazil","bonus":{"mostGoalsTeam":"Spain","topScorer":"Harry Kane","topScorerGoals":7.0,"totalGoalsRange":"110 - 119","redCards":6.0,"tiebreakMinute":17.0}},{"name":"Nath Rad","group":[[3,0],[1,0],[1,1],[2,0],[0,4],[0,2],[3,0],[0,1],[1,1],[5,0],[1,1],[1,0],[0,2],[4,0],[0,0],[2,2],[2,1],[0,2],[3,0],[2,0],[1,0],[2,0],[4,0],[0,2],[1,1],[1,1],[1,0],[2,0],[6,0],[2,1],[2,0],[2,0],[2,0],[1,0],[1,1],[0,3],[2,0],[4,0],[1,0],[0,1],[1,1],[3,0],[2,1],[0,2],[3,0],[0,1],[5,0],[1,0],[1,3],[1,0],[1,1],[2,1],[1,2],[2,2],[0,2],[0,3],[1,1],[0,2],[2,2],[0,0],[1,2],[1,0],[1,0],[0,2],[0,0],[1,3],[0,4],[2,0],[0,1],[0,3],[0,3],[1,0]],"r32":["Mexico","Korea Republic","Canada","Morocco","Brazil","Ivory Coast","USA","Bosnia and Herzegovina","Germany","Iran","Japan","Senegal","Egypt","Algeria","Spain","Ghana","France","Turkiye","Argentina","Scotland","Portugal","Switzerland","England","Sweden","Ecuador","Netherlands","Belgium","Uruguay","Norway","Austria","Colombia","Croatia"],"r16":["Mexico","Canada","Brazil","USA","Germany","Japan","Egypt","Spain","France","Argentina","Portugal","England","Netherlands","Uruguay","Norway","Croatia"],"qf":["Mexico","Brazil","Germany","Spain","France","Portugal","Netherlands","Norway"],"sf":["Brazil","Spain","Portugal","Netherlands"],"final":["Brazil","Portugal"],"winner":"Portugal","bonus":{"mostGoalsTeam":"Brazil","topScorer":"Vinicius","topScorerGoals":7.0,"totalGoalsRange":"210 - 219","redCards":6.0,"tiebreakMinute":8.0}},{"name":"Hughezy","group":[[2,1],[2,0],[1,1],[2,1],[0,2],[1,1],[3,0],[0,2],[2,0],[3,0],[2,2],[2,0],[0,3],[3,0],[0,0],[3,1],[4,1],[0,2],[2,0],[1,0],[1,1],[2,1],[3,0],[0,0],[2,2],[1,0],[2,1],[1,2],[3,0],[2,1],[2,2],[1,0],[3,1],[1,0],[2,1],[1,3],[2,0],[3,0],[2,0],[1,2],[2,2],[3,0],[2,0],[0,0],[2,0],[0,1],[2,0],[1,1],[0,2],[2,1],[2,2],[1,0],[1,2],[0,1],[0,2],[0,2],[2,1],[0,1],[1,1],[2,2],[0,2],[1,0],[3,0],[0,2],[0,2],[1,3],[0,2],[1,0],[0,0],[0,2],[1,3],[1,1]],"r32":["France","Argentina","England","Brazil","Spain","Portugal","Germany","Uruguay","Colombia","Morocco","Croatia","Belgium","USA","Mexico","Japan","Netherlands","Sweden","Belgium","Iran","Egypt","Spain","Uruguay","France","Senegal","Norway","Argentina","Austria","Algeria","Portugal","Colombia","England","Croatia"],"r16":["Mexico","Korea Republic","Czechia","Switzerland","Canada","Brazil","Morocco","Scotland","USA","Turkiye","Australia","Germany","Ecuador","Ivory Coast","Netherlands","Japan"],"qf":["France","Spain","England","Portugal","Argentina","Brazil","Netherlands","Germany"],"sf":["Spain","France","Portugal","Argentina"],"final":["Spain","France"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Mbappe","topScorerGoals":8.0,"totalGoalsRange":"170 - 179","redCards":9.0,"tiebreakMinute":31.0}},{"name":"Ross","group":[[3,1],[2,0],[1,0],[2,1],[0,1],[1,1],[4,1],[1,1],[2,1],[3,0],[2,2],[2,1],[0,3],[5,0],[0,1],[1,1],[3,1],[0,2],[5,1],[2,0],[1,0],[3,0],[3,0],[0,1],[0,0],[0,0],[1,0],[2,0],[4,0],[2,2],[1,1],[1,0],[3,1],[1,1],[2,2],[0,2],[3,0],[3,0],[2,1],[0,1],[1,3],[3,0],[2,0],[0,1],[2,0],[1,1],[2,0],[1,0],[0,3],[1,0],[0,0],[1,1],[0,0],[0,1],[0,1],[0,2],[2,1],[0,2],[1,2],[1,1],[1,4],[5,0],[1,0],[0,1],[1,1],[2,2],[0,1],[1,1],[1,1],[0,3],[1,2],[0,0]],"r32":["Korea Republic","Germany","Netherlands","Brazil","France","Senegal","Mexico","England","USA","Belgium","Spain","Switzerland","Argentina","Portugal","Ghana","Colombia","France","Senegal","Argentina","Austria","Portugal","Colombia","England","Ghana","Czechia","Ecuador","Norway","Sweden","Morocco","New Zealand","Turkiye","Croatia"],"r16":["Mexico","Korea Republic","Switzerland","Canada","Brazil","Scotland","USA","Paraguay","Spain","Uruguay","Belgium","Egypt","Netherlands","Japan","Germany","Ivory Coast"],"qf":["France","Netherlands","Brazil","England","Spain","USA","Portugal","Argentina"],"sf":["France","Spain","Brazil","Argentina"],"final":["France","Argentina"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Dembele","topScorerGoals":7.0,"totalGoalsRange":"140 - 149","redCards":6.0,"tiebreakMinute":56.0}},{"name":"Gary","group":[[3,1],[0,1],[0,1],[2,2],[0,2],[1,3],[2,1],[3,1],[1,1],[6,0],[1,0],[0,0],[1,1],[7,0],[2,0],[3,1],[3,0],[4,1],[2,0],[2,1],[3,1],[3,0],[4,1],[1,1],[2,0],[2,2],[2,1],[2,0],[5,1],[0,1],[3,1],[1,2],[3,1],[3,0],[4,0],[1,3],[3,1],[5,1],[6,1],[0,2],[3,1],[4,0],[3,1],[2,2],[3,0],[0,2],[4,1],[1,0],[1,4],[4,0],[2,0],[2,0],[1,3],[1,1],[1,3],[1,3],[1,0],[0,3],[3,1],[0,1],[2,3],[1,0],[1,0],[0,3],[1,4],[1,3],[0,6],[1,1],[0,1],[0,3],[1,3],[1,2]],"r32":["Germany","France","Bosnia and Herzegovina","Netherlands","Brazil","Norway","Mexico","England","Ghana","Spain","Turkiye","Belgium","Argentina","Australia","Portugal","Switzerland","Turkiye","Sweden","Belgium","Korea Republic","Colombia","Ghana","Spain","Austria","Switzerland","Ecuador","Argentina","Uruguay","Portugal","Australia","Croatia","Egypt"],"r16":["Czechia","Bosnia and Herzegovina","Germany","Scotland","Netherlands","Morocco","Brazil","Japan","France","USA","Ivory Coast","Norway","Mexico","Saudi Arabia","England","Senegal"],"qf":["France","Netherlands","Spain","Belgium","Brazil","Argentina","England","Portugal"],"sf":["France","Brazil","Spain","Portugal"],"final":["France","Portugal"],"winner":"France","bonus":{"mostGoalsTeam":"England","topScorer":"Vinicius Jnr","topScorerGoals":8.0,"totalGoalsRange":"230 - 239","redCards":12.0,"tiebreakMinute":13.0}},{"name":"Richard","group":[[2,0],[1,1],[1,1],[1,2],[0,2],[0,1],[2,0],[0,2],[1,1],[3,0],[2,0],[1,0],[1,2],[3,0],[0,2],[2,1],[3,0],[0,2],[2,0],[2,0],[1,1],[1,0],[2,0],[1,1],[1,1],[1,0],[2,0],[1,0],[4,0],[1,2],[1,2],[1,1],[2,1],[2,0],[2,0],[1,1],[3,1],[3,0],[3,0],[1,1],[1,1],[4,0],[2,0],[0,1],[2,0],[1,2],[2,0],[2,1],[0,2],[2,0],[2,1],[2,0],[1,1],[1,0],[0,2],[1,2],[1,1],[0,3],[1,1],[2,1],[1,2],[3,0],[2,0],[0,2],[0,0],[2,2],[0,2],[2,0],[1,2],[0,3],[1,2],[1,1]],"r32":["Germany","England","South Africa","Netherlands","Colombia","Spain","Paraguay","Belgium","Brazil","Senegal","Mexico","France","Argentina","Turkiye","Switzerland","Portugal","France","Senegal","Argentina","Austria","Portugal","Colombia","England","Croatia","Canada","New Zealand","Czechia","Norway","Ecuador","Scotland","Algeria","Japan"],"r16":["Mexico","South Africa","Switzerland","Bosnia and Herzegovina","Brazil","Morocco","Paraguay","Turkiye","Germany","Ivory Coast","Netherlands","Sweden","Belgium","Egypt","Spain","Uruguay"],"qf":["England","Netherlands","Spain","Belgium","Brazil","France","Argentina","Portugal"],"sf":["Netherlands","Spain","France","Argentina"],"final":["France","Spain"],"winner":"France","bonus":{"mostGoalsTeam":"France","topScorer":"Mbappe","topScorerGoals":7.0,"totalGoalsRange":"140 - 149","redCards":3.0,"tiebreakMinute":65.0}},{"name":"Ryan Thomas","group":[[2,0],[1,1],[1,0],[2,1],[0,2],[0,1],[3,1],[0,2],[1,2],[3,0],[2,1],[2,1],[0,2],[4,0],[0,0],[1,1],[2,0],[1,3],[3,0],[2,0],[2,1],[2,2],[3,0],[1,2],[2,0],[1,0],[2,0],[1,1],[5,0],[1,1],[1,0],[2,0],[2,1],[2,0],[2,2],[1,2],[3,0],[4,0],[2,0],[1,2],[2,2],[4,0],[2,1],[0,2],[2,1],[0,1],[2,0],[3,1],[1,2],[3,0],[1,1],[2,0],[1,1],[0,1],[0,2],[1,1],[1,1],[1,2],[2,1],[1,0],[1,3],[2,1],[2,0],[0,2],[2,2],[2,2],[0,3],[2,2],[1,1],[0,4],[2,1],[3,0]],"r32":["Germany","France","Mexico","Netherlands","Portugal","Spain","Turkiye","Belgium","Brazil","Norway","Scotland","England","Argentina","USA","Canada","Colombia","Czechia","England","Argentina","Uruguay","USA","Egypt","Canada","Colombia","Korea Republic","Scotland","Japan","Senegal","Ghana","Algeria","Bosnia and Herzegovina","Ivory Coast"],"r16":["Germany","France","Mexico","Switzerland","Netherlands","Morocco","Portugal","Croatia","Spain","Austria","Turkiye","Belgium","Brazil","Sweden","Ecuador","Norway"],"qf":["France","Netherlands","Spain","Turkiye","Brazil","England","Argentina","Colombia"],"sf":["France","Spain","Brazil","Argentina"],"final":["France","Brazil"],"winner":"France","bonus":{"mostGoalsTeam":"Spain","topScorer":"Ader guler","topScorerGoals":6.0,"totalGoalsRange":"190 - 199","redCards":8.0,"tiebreakMinute":12.0}}]};
+// Primary feed: ESPN (no key, clean English names, single ranged call covering the whole tournament)
+const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=400';
+// Secondary feed: TheSportsDB (fills any gaps ESPN doesn't have)
+const TSDB = 'https://www.thesportsdb.com/api/v1/json/3/';
+const TSDB_URLS = [
+  TSDB+'eventsseason.php?id=4429&s=2026',
+  TSDB+'eventsround.php?id=4429&r=1&s=2026',
+  TSDB+'eventsround.php?id=4429&r=2&s=2026',
+  TSDB+'eventsround.php?id=4429&r=3&s=2026'
+];
+const FINISHED = new Set(['FT','AET','PEN','Match Finished','Finished']);
+const LIVE = new Set(['1H','2H','HT','ET','BT','P','LIVE','In Play','Playing']);
+
+function keyize(s){ return (s||'').toString().toLowerCase().replace(/[^a-z]/g,''); }
+const ALIAS = {};
+DATA.canon.forEach(c=>ALIAS[keyize(c)] = c);
+Object.entries(DATA.aliasExtra).forEach(([k,v])=>ALIAS[keyize(k)] = v);
+const apiExtra = {'southkorea':'Korea Republic','korearepublic':'Korea Republic','czechrepublic':'Czechia',
+  'bosniaherzegovina':'Bosnia and Herzegovina','drcongo':'Congo DR','congodr':'Congo DR','democraticrepublicofcongo':'Congo DR',
+  'ctedivoire':'Ivory Coast','cotedivoire':'Ivory Coast','turkey':'Turkiye','trkiye':'Turkiye','curaao':'Curacao',
+  'caboverde':'Cape Verde','capeverdeislands':'Cape Verde','unitedstates':'USA','iranislamicrepublic':'Iran'};
+Object.entries(apiExtra).forEach(([k,v])=>ALIAS[keyize(k)] = v);
+function norm(s){ if(s==null||s==='') return null; const k=keyize(s); return ALIAS[k] || s.toString().trim(); }
+
+const ADMIN_PASS = 'JonesyMUFC2026';
+// Baked-in results snapshot (updated when admin clicks "Save & share"). Public copies read this.
+const INITIAL_STATE = /*STATE_START*/{"stamp":0}/*STATE_END*/;
+const LS = 'wc2026tracker_v1';
+function load(){ try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return {}} }
+const DEFAULTS = { auto:true, me:'', manualScores:{},
+  ko:{r32:[],r16:[],qf:[],sf:[],fin:[]},
+  bonus:{winner:'',mostGoals:'',topScorer:'',topScorerGoals:'',totalGoals:'',redCards:'',tiebreak:''},
+  scorerOK:{}, edited:false, stamp:0 };
+const _ls = load();
+// Use this browser's saved edits only if they're genuine admin edits AND newer than the file's baked snapshot.
+const _base = (_ls.edited && (_ls.stamp||0) > (INITIAL_STATE.stamp||0)) ? _ls : INITIAL_STATE;
+const state = Object.assign({}, DEFAULTS, _base);
+if(_base===INITIAL_STATE){ if(_ls.me) state.me=_ls.me; if(typeof _ls.auto==='boolean') state.auto=_ls.auto; }
+function save(){ localStorage.setItem(LS, JSON.stringify(state)); }
+function adminSave(){ state.edited=true; state.stamp=Date.now(); save(); }
+function exportFile(){
+  const snap={manualScores:state.manualScores,ko:state.ko,bonus:state.bonus,scorerOK:state.scorerOK,stamp:Date.now()};
+  let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  html=html.replace(/\/\*STATE_START\*\/[\s\S]*?\/\*STATE_END\*\//, '/*STATE_START*/'+JSON.stringify(snap).replace(/</g,'\\u003c')+'/*STATE_END*/');
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='WC2026_League.html'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+let feed = {};
+try{ const f=JSON.parse(localStorage.getItem(LS+'_feed')); if(f) feed=f; }catch(e){}
+
+const fxIndex = {};
+DATA.fixtures.forEach((fx,i)=>{ fxIndex[[fx.home,fx.away].sort().join('|')] = i; });
+
+// shared write rule: never override a final reading or your manual entries
+function writeFeed(idx,H,A,fin,live,status){
+  const prev = feed[idx];
+  if(prev && prev.final) return;     // a confirmed final stays
+  if(prev && !fin) return;           // don't replace existing with a non-final
+  feed[idx] = {h:H,a:A,status:status,final:fin,live:live};
+}
+function applyESPN(j){
+  (j.events||[]).forEach(ev=>{
+    const comp = ev.competitions && ev.competitions[0]; if(!comp) return;
+    const cs = comp.competitors||[]; if(cs.length<2) return;
+    const home = cs.find(c=>c.homeAway==='home'), away = cs.find(c=>c.homeAway==='away');
+    if(!home||!away) return;
+    const h = norm(home.team && (home.team.displayName||home.team.name));
+    const a = norm(away.team && (away.team.displayName||away.team.name));
+    if(!h||!a) return;
+    const idx = fxIndex[[h,a].sort().join('|')]; if(idx===undefined) return;
+    const st = comp.status && comp.status.type ? comp.status.type.state : '';
+    const completed = comp.status && comp.status.type ? comp.status.type.completed : false;
+    if(st==='pre' || st==='') return;  // not started → no score yet
+    let H=parseInt(home.score), A=parseInt(away.score);
+    if(isNaN(H)||isNaN(A)) return;
+    const fx=DATA.fixtures[idx]; if(fx.home!==h){ const t=H; H=A; A=t; }
+    writeFeed(idx,H,A, completed||st==='post', st==='in', st);
+  });
+}
+function applyTSDB(j){
+  (j.events||[]).forEach(ev=>{
+    const h=norm(ev.strHomeTeam), a=norm(ev.strAwayTeam); if(!h||!a) return;
+    const idx = fxIndex[[h,a].sort().join('|')]; if(idx===undefined) return;
+    const hs=ev.intHomeScore, as=ev.intAwayScore;
+    if(hs===null||hs===undefined||hs===''||as===null||as===undefined||as==='') return;
+    let H=parseInt(hs), A=parseInt(as); if(isNaN(H)||isNaN(A)) return;
+    const fx=DATA.fixtures[idx]; if(fx.home!==h){ const t=H; H=A; A=t; }
+    writeFeed(idx,H,A, FINISHED.has(ev.strStatus), LIVE.has(ev.strStatus), ev.strStatus);
+  });
+}
+async function fetchFeed(){
+  setStatus('live','Fetching live results…');
+  let any=false;
+  try{ const r=await fetch(ESPN_URL,{cache:'no-store'}); const j=await r.json(); if(j&&j.events){ any=true; applyESPN(j); } }catch(e){}
+  for(const url of TSDB_URLS){
+    try{ const r=await fetch(url,{cache:'no-store'}); const j=await r.json(); if(j&&j.events){ any=true; applyTSDB(j); } }catch(e){}
+  }
+  let finals=0; DATA.fixtures.forEach((fx,i)=>{ if(feed[i]&&feed[i].final) finals++; });
+  localStorage.setItem(LS+'_feed', JSON.stringify(feed));
+  if(any){ setStatus('ok','Live feed reachable · '+finals+' finished results found'); }
+  else { setStatus('err','Feed unavailable — using your entered results'); }
+  document.getElementById('lastUpd').textContent = 'Updated '+new Date().toLocaleTimeString();
+  renderAll();
+}
+function setStatus(cls,txt){
+  const d=document.getElementById('statusDot'); d.className='dot '+(cls==='ok'?'ok':cls==='err'?'err':'live');
+  document.getElementById('statusTxt').textContent=txt;
+}
+
+function scoreOf(idx){
+  if(state.manualScores[idx]) return {h:state.manualScores[idx][0],a:state.manualScores[idx][1],final:true,manual:true};
+  const f=feed[idx];
+  if(f && (f.final|| (f.h!=null))) return {h:f.h,a:f.a,final:f.final,live:f.live};
+  return null;
+}
+
+function outcome(h,a){ return h>a?'H':h<a?'A':'D'; }
+function scorePlayer(p){
+  let group=0, exact=0, correct=0;
+  DATA.fixtures.forEach((fx,i)=>{
+    const s=scoreOf(i); const pred=p.group[i];
+    if(!s||!s.final||!pred) return;
+    if(outcome(pred[0],pred[1])===outcome(s.h,s.a)){
+      if(pred[0]===s.h && pred[1]===s.a){ group+=8; exact++; correct++; }
+      else { group+=3; correct++; }
+    }
+  });
+  const setOf=a=>new Set(a.filter(Boolean));
+  const aR32=setOf(state.ko.r32),aR16=setOf(state.ko.r16),aQF=setOf(state.ko.qf),aSF=setOf(state.ko.sf),aFIN=setOf(state.ko.fin);
+  // count each DISTINCT correct pick once (a duplicated team can't score twice)
+  const cnt=(picks,act)=>{ const seen=new Set(); let n=0; picks.forEach(t=>{ if(t&&!seen.has(t)){ seen.add(t); if(act.has(t)) n++; } }); return n; };
+  const r32=cnt(p.r32,aR32)*5;
+  const r16=cnt(p.r16,aR16)*8;
+  const qf=cnt(p.qf,aQF)*10;
+  const sf=cnt(p.sf,aSF)*10;
+  const final=cnt(p.final,aFIN)*15;
+  const winner=(state.bonus.winner && p.winner===state.bonus.winner)?20:0;
+  let bonus=0; const b=state.bonus, pb=p.bonus;
+  if(b.mostGoals && pb.mostGoalsTeam===b.mostGoals) bonus+=10;
+  if(b.topScorer){ if(state.scorerOK[p.name]) bonus+=10; }
+  if(b.topScorerGoals!=='' && pb.topScorerGoals!=null && Number(pb.topScorerGoals)===Number(b.topScorerGoals)) bonus+=10;
+  if(b.totalGoals!=='' && pb.totalGoalsRange){ if(inRange(Number(b.totalGoals),pb.totalGoalsRange)) bonus+=10; }
+  if(b.redCards!=='' && pb.redCards!=null && Number(pb.redCards)===Number(b.redCards)) bonus+=10;
+  const total=group+r32+r16+qf+sf+final+winner+bonus;
+  let tb=null;
+  if(b.tiebreak!=='' && pb.tiebreakMinute!=null) tb=Math.abs(Number(pb.tiebreakMinute)-Number(b.tiebreak));
+  return {group,r32,r16,qf,sf,final,winner,bonus,total,exact,correct,tb};
+}
+function inRange(v,rangeStr){
+  const m=rangeStr.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if(m) return v>=Number(m[1]) && v<=Number(m[2]);
+  const single=rangeStr.match(/(\d+)/);
+  if(single) return v===Number(single[1]);
+  return false;
+}
+
+let lastRanks={};
+function renderTable(){
+  const rows = DATA.players.map(p=>({p,s:scorePlayer(p)}));
+  let sk = renderTable.sortKey||'total', dir=renderTable.dir||-1;
+  rows.sort((x,y)=>{
+    let av,bv;
+    if(sk==='name'){av=x.p.name.toLowerCase();bv=y.p.name.toLowerCase();return av<bv?-1*dir:av>bv?1*dir:0;}
+    av=x.s[sk]; bv=y.s[sk];
+    if(av!==bv) return (av-bv)*dir;
+    if(x.s.total!==y.s.total) return (x.s.total-y.s.total)*-1;
+    if(x.s.tb!=null && y.s.tb!=null && x.s.tb!==y.s.tb) return x.s.tb-y.s.tb;
+    return x.p.name.localeCompare(y.p.name);
+  });
+  const tb=document.querySelector('#leagueTbl tbody'); tb.innerHTML='';
+  rows.forEach((r,i)=>{
+    const rank=i+1; const prev=lastRanks[r.p.name];
+    let mv=''; if(prev!==undefined){ if(prev>rank) mv='<span class="mv up">▲'+(prev-rank)+'</span>'; else if(prev<rank) mv='<span class="mv down">▼'+(rank-prev)+'</span>'; }
+    const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+    const tr=document.createElement('tr');
+    tr.className=(rank<=3?'r'+rank+' ':'')+(state.me===r.p.name?'me':'');
+    tr.innerHTML='<td class="rank">'+rank+mv+'</td>'+
+      '<td class="name"><span class="medal">'+medal+'</span>'+esc(r.p.name)+'</td>'+
+      '<td>'+r.s.group+'</td>'+
+      '<td class="hidem">'+r.s.r32+'</td><td class="hidem">'+r.s.r16+'</td>'+
+      '<td class="hidem">'+r.s.qf+'</td><td class="hidem">'+r.s.sf+'</td>'+
+      '<td class="hidem">'+r.s.final+'</td><td class="hidem">'+r.s.winner+'</td>'+
+      '<td class="hidem">'+r.s.bonus+'</td>'+
+      '<td class="tot">'+r.s.total+'</td>';
+    tb.appendChild(tr);
+  });
+  rows.forEach((r,i)=>lastRanks[r.p.name]=i+1);
+  let done=0,live=0,man=0; DATA.fixtures.forEach((fx,i)=>{const s=scoreOf(i); if(s&&s.final)done++; if(feed[i]&&feed[i].live)live++; if(state.manualScores[i])man++;});
+  document.getElementById('prog').textContent=done+'/72 scored'+(man?(' · '+man+' entered by you'):'')+(live?' · '+live+' live':'');
+  document.getElementById('liveCount').style.display=live?'inline-block':'none';
+}
+function esc(s){return (s+'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+let editFx=false;
+function renderFixtures(){
+  const cont=document.getElementById('fxByRound'); cont.innerHTML='';
+  const rounds={1:[],2:[],3:[]};
+  DATA.fixtures.forEach((fx,i)=>{ const r = i<24?1:i<48?2:3; rounds[r].push(i); });
+  [1,2,3].forEach(r=>{
+    const h=document.createElement('div'); h.className='stagehead'; h.textContent='Group Stage — Matchday '+r; cont.appendChild(h);
+    const g=document.createElement('div'); g.className='fxgrid';
+    rounds[r].forEach(i=>{
+      const fx=DATA.fixtures[i]; const s=scoreOf(i); const f=feed[i];
+      const live = f&&f.live; const fin = s&&s.final;
+      const div=document.createElement('div'); div.className='fx'+(live?' live':'');
+      let scoreHtml;
+      if(editFx){
+        const hv=s?s.h:''; const av=s?s.a:'';
+        scoreHtml='<input class="scin" data-fx="'+i+'" data-side="h" value="'+hv+'"> <input class="scin" data-fx="'+i+'" data-side="a" value="'+av+'">';
+      } else {
+        scoreHtml = s? (s.h+' - '+s.a) : '<span class="muted">—</span>';
+      }
+      const badge = fin?'<span class="badge ft">FT</span>':live?'<span class="badge lv">LIVE</span>':'<span class="badge">M'+fx.n+'</span>';
+      div.innerHTML='<div class="ft"><span class="tnm">'+esc(fx.home)+'</span><span class="sc">'+scoreHtml+'</span><span class="tnm" style="text-align:right">'+esc(fx.away)+'</span></div>'+
+        '<div class="meta"><span>Match '+fx.n+'</span>'+badge+(s&&s.manual?'<span class="badge">edited</span>':'')+'</div>';
+      g.appendChild(div);
+    });
+    cont.appendChild(g);
+  });
+  if(editFx){
+    cont.querySelectorAll('.scin').forEach(inp=>inp.addEventListener('change',e=>{
+      const i=+e.target.dataset.fx; const side=e.target.dataset.side;
+      const ex=scoreOf(i); const cur=state.manualScores[i] || (ex?[ex.h,ex.a]:[0,0]);
+      const v=e.target.value===''?null:parseInt(e.target.value);
+      if(side==='h') cur[0]=v; else cur[1]=v;
+      if(cur[0]==null && cur[1]==null) delete state.manualScores[i];
+      else state.manualScores[i]=[cur[0]||0,cur[1]||0];
+      adminSave(); renderTable();
+    }));
+  }
+}
+
+function renderKO(){
+  const stages=[['r32','chipR32','cR32'],['r16','chipR16','cR16'],['qf','chipQF','cQF'],['sf','chipSF','cSF'],['fin','chipFIN','cFIN']];
+  const limits={r32:32,r16:16,qf:8,sf:4,fin:2};
+  stages.forEach(([key,cid,cnt])=>{
+    const c=document.getElementById(cid); c.innerHTML='';
+    DATA.canon.slice().sort().forEach(team=>{
+      const on=state.ko[key].includes(team);
+      const ch=document.createElement('div'); ch.className='chip'+(on?' on':''); ch.textContent=team;
+      ch.onclick=()=>{ const arr=state.ko[key]; const ix=arr.indexOf(team);
+        if(ix>=0)arr.splice(ix,1); else arr.push(team); adminSave(); renderKO(); renderTable(); };
+      c.appendChild(ch);
+    });
+    document.getElementById(cnt).textContent=state.ko[key].length+' / '+limits[key]+' selected';
+  });
+}
+
+function renderBonus(){
+  const w=document.getElementById('bWinner');
+  w.innerHTML='<option value="">— not decided —</option>'+DATA.canon.slice().sort().map(t=>'<option '+(state.bonus.winner===t?'selected':'')+'>'+t+'</option>').join('');
+  const mg=document.getElementById('bMostGoals');
+  mg.innerHTML='<option value="">— not decided —</option>'+DATA.canon.slice().sort().map(t=>'<option '+(state.bonus.mostGoals===t?'selected':'')+'>'+t+'</option>').join('');
+  document.getElementById('bTopScorer').value=state.bonus.topScorer||'';
+  document.getElementById('bTopScorerGoals').value=state.bonus.topScorerGoals||'';
+  document.getElementById('bTotalGoals').value=state.bonus.totalGoals||'';
+  document.getElementById('bRedCards').value=state.bonus.redCards||'';
+  document.getElementById('bTiebreak').value=state.bonus.tiebreak||'';
+  const sc=document.getElementById('scorerOverrides'); sc.innerHTML='';
+  if(state.bonus.topScorer){
+    const target=keyize(state.bonus.topScorer);
+    DATA.players.forEach(p=>{
+      const ans=p.bonus.topScorer; if(!ans) return;
+      const ka=keyize(ans);
+      const auto = ka===target || (ka.length>3 && (ka.includes(target)||target.includes(ka)));
+      if(state.scorerOK[p.name]===undefined && auto) state.scorerOK[p.name]=true;
+      const on=!!state.scorerOK[p.name];
+      const ch=document.createElement('div'); ch.className='chip'+(on?' on':''); ch.textContent=p.name+': '+ans;
+      ch.onclick=()=>{ state.scorerOK[p.name]=!state.scorerOK[p.name]; adminSave(); renderBonus(); renderTable(); };
+      sc.appendChild(ch);
+    });
+  } else { sc.innerHTML='<span class="muted small">Enter the Golden Boot winner above first.</span>'; }
+}
+function bindBonus(){
+  const map={bWinner:'winner',bMostGoals:'mostGoals',bTopScorer:'topScorer',bTopScorerGoals:'topScorerGoals',bTotalGoals:'totalGoals',bRedCards:'redCards',bTiebreak:'tiebreak'};
+  Object.entries(map).forEach(([id,key])=>{
+    document.getElementById(id).addEventListener('change',e=>{
+      state.bonus[key]=e.target.value;
+      if(key==='topScorer') state.scorerOK={};
+      adminSave(); renderBonus(); renderTable();
+    });
+  });
+}
+
+function renderRecords(){
+  const cont=document.getElementById('recDetail');
+  const sel=document.getElementById('recSel');
+  if(!sel.value && sel.options.length){ sel.value = state.me || sel.options[0].value; }
+  const name=sel.value;
+  const p=DATA.players.find(x=>x.name===name);
+  if(!p){ cont.innerHTML=''; return; }
+  const ranked=DATA.players.map(x=>({x,s:scorePlayer(x)})).sort((a,b)=>(b.s.total-a.s.total)||((a.s.tb==null?1e9:a.s.tb)-(b.s.tb==null?1e9:b.s.tb))||a.x.name.localeCompare(b.x.name));
+  const rank=ranked.findIndex(r=>r.x.name===name)+1;
+  const suf=(rank===1?'st':rank===2?'nd':rank===3?'rd':'th');
+  const s=scorePlayer(p);
+  // game-by-game
+  let rows='';
+  DATA.fixtures.forEach((fx,i)=>{
+    const sc=scoreOf(i), pred=p.group[i];
+    const predS = pred? (pred[0]+'-'+pred[1]) : '—';
+    let res='—', pts='', cls='';
+    if(sc && sc.final){
+      res=sc.h+'-'+sc.a;
+      if(pred){
+        if(outcome(pred[0],pred[1])===outcome(sc.h,sc.a)){ if(pred[0]===sc.h&&pred[1]===sc.a){pts='8';cls='pts8';} else {pts='3';cls='pts3';} }
+        else { pts='0'; cls='pts0'; }
+      }
+    } else if(sc && sc.live){ res=sc.h+'-'+sc.a+' •'; }
+    rows+='<tr><td>'+fx.n+'</td><td class="l">'+esc(fx.home)+' v '+esc(fx.away)+'</td><td>'+predS+'</td><td>'+res+'</td><td class="'+cls+'">'+pts+'</td></tr>';
+  });
+  function koLine(label,picks,actArr){
+    const act=new Set((actArr||[]).filter(Boolean)); const decided=act.size>0; const seen=new Set();
+    const chips=picks.filter(Boolean).map(t=>{ const dup=seen.has(t); seen.add(t); const hit=decided&&act.has(t)&&!dup;
+      return '<span class="chip'+(hit?' on':'')+'" style="cursor:default">'+esc(t)+(hit?' ✓':'')+(dup?' ⟲dup':'')+'</span>'; }).join('');
+    return '<div class="small muted" style="margin:10px 0 4px">'+label+'</div><div class="pickrow">'+(chips||'<span class="muted small">—</span>')+'</div>';
+  }
+  const winHit = state.bonus.winner && p.winner===state.bonus.winner;
+  cont.innerHTML=
+   '<div class="reccard">'+
+     '<div class="rechead"><div class="nm">'+esc(p.name)+' <span class="small muted">· '+rank+suf+' of '+DATA.players.length+'</span></div><div class="pt">'+s.total+' pts</div></div>'+
+     '<div class="pickrow small"><span class="badge">Group '+s.group+'</span><span class="badge">R32 '+s.r32+'</span><span class="badge">R16 '+s.r16+'</span><span class="badge">QF '+s.qf+'</span><span class="badge">SF '+s.sf+'</span><span class="badge">Final '+s.final+'</span><span class="badge">Winner '+s.winner+'</span><span class="badge">Bonus '+s.bonus+'</span></div>'+
+     '<div class="small muted" style="margin-top:6px">Group stage: '+s.correct+' correct results, '+s.exact+' exact scores.</div>'+
+   '</div>'+
+   '<div class="reccard"><h2 style="margin-bottom:8px">Game-by-game</h2><div style="overflow:auto"><table class="rec"><thead><tr><th>#</th><th class="l">Match</th><th>Pick</th><th>Result</th><th>Pts</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+   '<div class="reccard"><h2 style="margin-bottom:2px">Knockout &amp; bonus picks</h2>'+
+     '<div class="small muted">Green ✓ = correct once that stage is set. ⟲dup = duplicate pick (only scores once).</div>'+
+     koLine('Reached R32 (5 each)',p.r32,state.ko.r32)+
+     koLine('Last 16 (8 each)',p.r16,state.ko.r16)+
+     koLine('Quarter-finals (10 each)',p.qf,state.ko.qf)+
+     koLine('Semi-finals (10 each)',p.sf,state.ko.sf)+
+     koLine('Finalists (15 each)',p.final,state.ko.fin)+
+     '<div class="small muted" style="margin:10px 0 4px">Winner (20)</div><div class="pickrow"><span class="chip'+(winHit?' on':'')+'" style="cursor:default">'+esc(p.winner||'—')+(winHit?' ✓':'')+'</span></div>'+
+     '<div class="small muted" style="margin:10px 0 4px">Bonus answers</div>'+
+     '<div class="pickrow small">'+
+       '<span class="badge">Most goals: '+esc(p.bonus.mostGoalsTeam||'—')+'</span>'+
+       '<span class="badge">Golden Boot: '+esc(p.bonus.topScorer||'—')+'</span>'+
+       '<span class="badge">Top scorer goals: '+(p.bonus.topScorerGoals==null?'—':p.bonus.topScorerGoals)+'</span>'+
+       '<span class="badge">Total goals: '+esc(p.bonus.totalGoalsRange||'—')+'</span>'+
+       '<span class="badge">Red cards: '+(p.bonus.redCards==null?'—':p.bonus.redCards)+'</span>'+
+       '<span class="badge">1st card min: '+(p.bonus.tiebreakMinute==null?'—':p.bonus.tiebreakMinute)+'</span>'+
+     '</div>'+
+   '</div>';
+}
+
+function renderAll(){ renderTable(); if(curTab==='fixtures')renderFixtures(); if(curTab==='ko')renderKO(); if(curTab==='bonus')renderBonus(); if(curTab==='records')renderRecords(); }
+
+let curTab='table';
+function selectTab(name){
+  curTab=name;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
+  ['table','records','fixtures','ko','bonus'].forEach(s=>{ const el=document.getElementById('tab-'+s); if(el) el.style.display=(s===name?'':'none'); });
+  renderAll();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>selectTab(t.dataset.tab));
+
+/* ---- admin gating ---- */
+let admin = false; try{ admin = sessionStorage.getItem('wc_admin')==='1'; }catch(e){}
+function setAdmin(on){
+  admin=on; try{ sessionStorage.setItem('wc_admin', on?'1':'0'); }catch(e){}
+  document.querySelectorAll('.admintab').forEach(t=>{ t.style.display = on?'':'none'; });
+  document.getElementById('exportBtn').style.display = on?'':'none';
+  const b=document.getElementById('adminBtn'); b.textContent = on?'🔓 Admin · lock':'🔒 Admin'; b.classList.toggle('primary',on);
+  if(!on && ['fixtures','ko','bonus'].includes(curTab)) selectTab('table');
+}
+document.getElementById('adminBtn').onclick=function(){
+  if(admin){ setAdmin(false); return; }
+  const p=prompt('Enter admin password:'); if(p===null) return;
+  if(p===ADMIN_PASS){ setAdmin(true); selectTab('fixtures'); }
+  else alert('Incorrect password.');
+};
+document.getElementById('exportBtn').onclick=exportFile;
+
+document.querySelectorAll('#leagueTbl th[data-sort]').forEach(th=>th.onclick=()=>{
+  const k=th.dataset.sort;
+  if(renderTable.sortKey===k) renderTable.dir*=-1; else {renderTable.sortKey=k; renderTable.dir=(k==='name'?1:-1);}
+  document.querySelectorAll('#leagueTbl th').forEach(x=>x.textContent=x.textContent.replace(/[▾▴]/g,'').trim());
+  th.textContent=th.textContent+' '+(renderTable.dir<0?'▾':'▴');
+  renderTable();
+});
+
+const meSel=document.getElementById('meSel');
+const recSel=document.getElementById('recSel');
+meSel.innerHTML='<option value="">— none —</option>'; recSel.innerHTML='';
+DATA.players.map(p=>p.name).sort().forEach(n=>{
+  const o=document.createElement('option'); o.textContent=n; o.value=n; meSel.appendChild(o);
+  const o2=document.createElement('option'); o2.textContent=n; o2.value=n; recSel.appendChild(o2);
+});
+meSel.value=state.me||''; meSel.onchange=e=>{state.me=e.target.value;save();renderTable();};
+recSel.value=state.me||(recSel.options[0]?recSel.options[0].value:''); recSel.onchange=()=>renderRecords();
+
+document.getElementById('refreshBtn').onclick=fetchFeed;
+document.getElementById('autoBtn').onclick=function(){ state.auto=!state.auto; save(); this.textContent='Auto-refresh: '+(state.auto?'ON':'OFF'); setupTimer(); };
+document.getElementById('autoBtn').textContent='Auto-refresh: '+(state.auto?'ON':'OFF');
+document.getElementById('editFx').onclick=function(){ editFx=!editFx; this.classList.toggle('primary',editFx); this.textContent=editFx?'✓ Done editing':'✎ Edit individual scores'; renderFixtures(); };
+document.getElementById('bulkBtn').onclick=function(){ const p=document.getElementById('bulkPanel'); p.style.display=(p.style.display==='none'?'':'none'); };
+document.getElementById('bulkApply').onclick=function(){
+  const byNum={}; DATA.fixtures.forEach((fx,i)=>byNum[fx.n]=i);
+  let ok=0,bad=0;
+  document.getElementById('bulkText').value.split(/\n/).forEach(ln=>{
+    ln=ln.trim(); if(!ln) return;
+    const m=ln.match(/^(\d+)\D+?(\d+)\s*[-:x]\s*(\d+)/i);
+    if(!m){ bad++; return; }
+    const idx=byNum[parseInt(m[1])];
+    if(idx===undefined){ bad++; return; }
+    state.manualScores[idx]=[parseInt(m[2]),parseInt(m[3])]; ok++;
+  });
+  adminSave();
+  document.getElementById('bulkMsg').textContent=ok+' result(s) applied'+(bad?(' · '+bad+' line(s) skipped'):'');
+  renderAll();
+};
+document.getElementById('bulkClear').onclick=function(){
+  if(confirm('Remove ALL results you have entered manually? (Feed results stay.)')){
+    state.manualScores={}; adminSave();
+    document.getElementById('bulkMsg').textContent='Your manual entries cleared.';
+    renderAll();
+  }
+};
+
+let timer=null;
+function setupTimer(){ if(timer)clearInterval(timer); if(state.auto) timer=setInterval(fetchFeed,60000); }
+
+bindBonus();
+setAdmin(admin);
+selectTab('table');
+setupTimer();
+fetchFeed();
+</script>
+</body>
+</html>
