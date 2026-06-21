@@ -129,6 +129,7 @@
     <div class="toolbar">
       <label class="small muted">Highlight me:&nbsp;</label>
       <select class="cmp" id="meSel"><option value="">— none —</option></select>
+      <button class="btn" id="liveBtn">⚡ Live scores: ON</button>
       <span class="grow"></span>
       <span class="pill"><span id="liveCount" class="dot live" style="display:none"></span><span id="prog"></span></span>
     </div>
@@ -235,7 +236,7 @@ const ADMIN_PASS = 'JonesyMUFC2026';
 const INITIAL_STATE = /*STATE_START*/{"stamp":0}/*STATE_END*/;
 const LS = 'wc2026tracker_v1';
 function load(){ try{return JSON.parse(localStorage.getItem(LS))||{}}catch(e){return {}} }
-const DEFAULTS = { auto:true, me:'', manualScores:{},
+const DEFAULTS = { auto:true, me:'', includeLive:true, manualScores:{},
   ko:{r32:[],r16:[],qf:[],sf:[],fin:[]},
   bonus:{winner:'',mostGoals:'',topScorer:'',topScorerGoals:'',totalGoals:'',redCards:'',tiebreak:''},
   scorerOK:{}, edited:false, stamp:0 };
@@ -243,7 +244,10 @@ const _ls = load();
 // Use this browser's saved edits only if they're genuine admin edits AND newer than the file's baked snapshot.
 const _base = (_ls.edited && (_ls.stamp||0) > (INITIAL_STATE.stamp||0)) ? _ls : INITIAL_STATE;
 const state = Object.assign({}, DEFAULTS, _base);
-if(_base===INITIAL_STATE){ if(_ls.me) state.me=_ls.me; if(typeof _ls.auto==='boolean') state.auto=_ls.auto; }
+// personal view prefs always come from this browser
+if(_ls.me) state.me=_ls.me;
+if(typeof _ls.auto==='boolean') state.auto=_ls.auto;
+if(typeof _ls.includeLive==='boolean') state.includeLive=_ls.includeLive;
 function save(){ localStorage.setItem(LS, JSON.stringify(state)); }
 function adminSave(){ state.edited=true; state.stamp=Date.now(); save(); }
 function exportFile(){
@@ -372,14 +376,19 @@ function scoreOf(idx){
 
 function outcome(h,a){ return h>a?'H':h<a?'A':'D'; }
 function scorePlayer(p){
-  let group=0, exact=0, correct=0;
+  let group=0, exact=0, correct=0, prov=0, liveGames=0;
   DATA.fixtures.forEach((fx,i)=>{
     const s=scoreOf(i); const pred=p.group[i];
-    if(!s||!s.final||!pred) return;
+    if(!s||!pred) return;
+    const isLive = s.live && !s.final;
+    if(!s.final && !(isLive && state.includeLive)) return;   // skip not-started, and live ones if toggle is off
+    let pts=0;
     if(outcome(pred[0],pred[1])===outcome(s.h,s.a)){
-      if(pred[0]===s.h && pred[1]===s.a){ group+=8; exact++; correct++; }
-      else { group+=3; correct++; }
+      if(pred[0]===s.h && pred[1]===s.a){ pts=8; exact++; correct++; }
+      else { pts=3; correct++; }
     }
+    group+=pts;
+    if(isLive){ prov+=pts; liveGames++; }
   });
   const aR32=effSet('r32'),aR16=effSet('r16'),aQF=effSet('qf'),aSF=effSet('sf'),aFIN=effSet('fin');
   // count each DISTINCT correct pick once (a duplicated team can't score twice)
@@ -400,7 +409,7 @@ function scorePlayer(p){
   const total=group+r32+r16+qf+sf+final+winner+bonus;
   let tb=null;
   if(b.tiebreak!=='' && pb.tiebreakMinute!=null) tb=Math.abs(Number(pb.tiebreakMinute)-Number(b.tiebreak));
-  return {group,r32,r16,qf,sf,final,winner,bonus,total,exact,correct,tb};
+  return {group,r32,r16,qf,sf,final,winner,bonus,total,exact,correct,tb,prov,liveGames};
 }
 function inRange(v,rangeStr){
   const m=rangeStr.match(/(\d+)\s*[-–]\s*(\d+)/);
@@ -437,7 +446,7 @@ function renderTable(){
       '<td class="hidem">'+r.s.qf+'</td><td class="hidem">'+r.s.sf+'</td>'+
       '<td class="hidem">'+r.s.final+'</td><td class="hidem">'+r.s.winner+'</td>'+
       '<td class="hidem">'+r.s.bonus+'</td>'+
-      '<td class="tot">'+r.s.total+'</td>';
+      '<td class="tot">'+r.s.total+(r.s.prov?' <span title="includes '+r.s.prov+' provisional point(s) from live games" style="color:var(--live);font-size:11px">⚡</span>':'')+'</td>';
     tb.appendChild(tr);
   });
   rows.forEach((r,i)=>lastRanks[r.p.name]=i+1);
@@ -561,14 +570,15 @@ function renderRecords(){
     const sc=scoreOf(i), pred=p.group[i];
     const predS = pred? (pred[0]+'-'+pred[1]) : '—';
     let res='—', pts='', cls='';
-    if(sc && sc.final){
-      res=sc.h+'-'+sc.a;
-      if(pred){
-        if(outcome(pred[0],pred[1])===outcome(sc.h,sc.a)){ if(pred[0]===sc.h&&pred[1]===sc.a){pts='8';cls='pts8';} else {pts='3';cls='pts3';} }
-        else { pts='0'; cls='pts0'; }
-      }
-    } else if(sc && sc.live){ res=sc.h+'-'+sc.a+' •'; }
-    rows+='<tr><td>'+fx.n+'</td><td class="l">'+esc(fx.home)+' v '+esc(fx.away)+'</td><td>'+predS+'</td><td>'+res+'</td><td class="'+cls+'">'+pts+'</td></tr>';
+    const isLiveNow = sc && sc.live && !sc.final;
+    const scored = sc && (sc.final || (isLiveNow && state.includeLive));
+    if(sc && (sc.final||sc.live)) res=sc.h+'-'+sc.a+(isLiveNow?' •':'');
+    if(scored && pred){
+      if(outcome(pred[0],pred[1])===outcome(sc.h,sc.a)){ if(pred[0]===sc.h&&pred[1]===sc.a){pts='8';cls='pts8';} else {pts='3';cls='pts3';} }
+      else { pts='0'; cls='pts0'; }
+      if(isLiveNow) pts=pts+'*';   // provisional
+    }
+    rows+='<tr'+(isLiveNow?' style="background:rgba(255,84,112,.06)"':'')+'><td>'+fx.n+'</td><td class="l">'+esc(fx.home)+' v '+esc(fx.away)+'</td><td>'+predS+'</td><td>'+res+'</td><td class="'+cls+'">'+pts+'</td></tr>';
   });
   function koLine(label,picks,actArr){
     const act=new Set((actArr||[]).filter(Boolean)); const decided=act.size>0; const seen=new Set();
@@ -583,7 +593,7 @@ function renderRecords(){
      '<div class="pickrow small"><span class="badge">Group '+s.group+'</span><span class="badge">R32 '+s.r32+'</span><span class="badge">R16 '+s.r16+'</span><span class="badge">QF '+s.qf+'</span><span class="badge">SF '+s.sf+'</span><span class="badge">Final '+s.final+'</span><span class="badge">Winner '+s.winner+'</span><span class="badge">Bonus '+s.bonus+'</span></div>'+
      '<div class="small muted" style="margin-top:6px">Group stage: '+s.correct+' correct results, '+s.exact+' exact scores.</div>'+
    '</div>'+
-   '<div class="reccard"><h2 style="margin-bottom:8px">Game-by-game</h2><div style="overflow:auto"><table class="rec"><thead><tr><th>#</th><th class="l">Match</th><th>Pick</th><th>Result</th><th>Pts</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+   '<div class="reccard"><h2 style="margin-bottom:2px">Game-by-game</h2><div class="small muted" style="margin-bottom:8px">• = live now · * = provisional (can still change)</div><div style="overflow:auto"><table class="rec"><thead><tr><th>#</th><th class="l">Match</th><th>Pick</th><th>Result</th><th>Pts</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
    '<div class="reccard"><h2 style="margin-bottom:2px">Knockout &amp; bonus picks</h2>'+
      '<div class="small muted">Green ✓ = correct once that stage is set. ⟲dup = duplicate pick (only scores once).</div>'+
      koLine('Reached R32 (5 each)',p.r32,Array.from(effSet('r32')))+
@@ -653,6 +663,9 @@ recSel.value=state.me||(recSel.options[0]?recSel.options[0].value:''); recSel.on
 document.getElementById('refreshBtn').onclick=fetchFeed;
 document.getElementById('autoBtn').onclick=function(){ state.auto=!state.auto; save(); this.textContent='Auto-refresh: '+(state.auto?'ON':'OFF'); setupTimer(); };
 document.getElementById('autoBtn').textContent='Auto-refresh: '+(state.auto?'ON':'OFF');
+document.getElementById('liveBtn').onclick=function(){ state.includeLive=!state.includeLive; save(); this.textContent='⚡ Live scores: '+(state.includeLive?'ON':'OFF'); this.classList.toggle('primary',state.includeLive); renderAll(); };
+document.getElementById('liveBtn').textContent='⚡ Live scores: '+(state.includeLive?'ON':'OFF');
+document.getElementById('liveBtn').classList.toggle('primary',state.includeLive);
 document.getElementById('editFx').onclick=function(){ editFx=!editFx; this.classList.toggle('primary',editFx); this.textContent=editFx?'✓ Done editing':'✎ Edit individual scores'; renderFixtures(); };
 document.getElementById('bulkBtn').onclick=function(){ const p=document.getElementById('bulkPanel'); p.style.display=(p.style.display==='none'?'':'none'); };
 document.getElementById('bulkApply').onclick=function(){
