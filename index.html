@@ -281,12 +281,12 @@ function saveAuto(){ const o={winner:autoWinner}; ['r32','r16','qf','sf','fin'].
 function effSet(key){ const s=new Set(state.ko[key]||[]); (autoKO[key]||new Set()).forEach(t=>s.add(t)); return s; }
 function effWinner(){ return state.bonus.winner || autoWinner || ''; }
 
-// shared write rule: never override a final reading or your manual entries
-function writeFeed(idx,H,A,fin,live,status){
+// write rule: live scores refresh every cycle; a confirmed final is never downgraded; ESPN wins over TheSportsDB
+function writeFeed(idx,H,A,fin,live,status,src){
   const prev = feed[idx];
-  if(prev && prev.final) return;     // a confirmed final stays
-  if(prev && !fin) return;           // don't replace existing with a non-final
-  feed[idx] = {h:H,a:A,status:status,final:fin,live:live};
+  if(prev && prev.final && !fin) return;                 // don't replace a confirmed final with a live/non-final reading
+  if(prev && prev.src==='espn' && src==='tsdb') return;  // ESPN (primary) takes priority over the backup feed
+  feed[idx] = {h:H,a:A,status:status,final:fin,live:live,src:src};
 }
 function applyESPN(j){
   // build a date->round calendar as a fallback classifier
@@ -329,7 +329,7 @@ function applyESPN(j){
     let H=parseInt(home.score), A=parseInt(away.score);
     if(isNaN(H)||isNaN(A)) return;
     const fx=DATA.fixtures[idx]; if(fx.home!==h){ const t=H; H=A; A=t; }
-    writeFeed(idx,H,A, completed||st==='post', st==='in', st);
+    writeFeed(idx,H,A, completed||st==='post', st==='in', st, 'espn');
   });
 }
 function applyTSDB(j){
@@ -340,7 +340,7 @@ function applyTSDB(j){
     if(hs===null||hs===undefined||hs===''||as===null||as===undefined||as==='') return;
     let H=parseInt(hs), A=parseInt(as); if(isNaN(H)||isNaN(A)) return;
     const fx=DATA.fixtures[idx]; if(fx.home!==h){ const t=H; H=A; A=t; }
-    writeFeed(idx,H,A, FINISHED.has(ev.strStatus), LIVE.has(ev.strStatus), ev.strStatus);
+    writeFeed(idx,H,A, FINISHED.has(ev.strStatus), LIVE.has(ev.strStatus), ev.strStatus, 'tsdb');
   });
 }
 async function fetchFeed(){
