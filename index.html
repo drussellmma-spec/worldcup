@@ -149,7 +149,7 @@
         <tbody></tbody>
       </table>
     </div>
-    <div class="note">Group points update automatically from the live feed as matches finish (3 = correct result, 8 = exact score). Knockout, Winner and Bonus points use the answers you set on their tabs. Ties are broken by the final tiebreaker (closest first-card minute) once you enter it.</div>
+    <div class="note">Group scores (3 = correct result, 8 = exact) <b>and</b> knockout qualifiers update automatically from the live feed — including who reached each round and the eventual winner. Only the end-of-tournament bonus answers need entering by the admin. Ties are broken by the final tiebreaker (closest first-card minute).</div>
   </section>
 
   <section id="tab-fixtures" style="display:none">
@@ -169,7 +169,7 @@
   </section>
 
   <section id="tab-ko" style="display:none">
-    <div class="note">Tick the teams that <b>actually</b> reached each stage. Points: Reached R32 = 5 each · Last 16 = 8 · Quarter-final = 10 · Semi-final = 10 · Final = 15. Each player is scored on their own picks for that stage.</div>
+    <div class="note">Teams that reach each round are detected <b>automatically from the live feed</b> (marked ⚡) — you normally don't need to touch this. Only tick a team manually if the feed is lagging behind. Points: Reached R32 = 5 each · Last 16 = 8 · Quarter-final = 10 · Semi-final = 10 · Final = 15.</div>
     <div class="card"><h2>Reached Round of 32 <span class="countpill" id="cR32"></span></h2><div class="chips" id="chipR32"></div></div>
     <div class="card"><h2>Reached Last 16 <span class="countpill" id="cR16"></span></h2><div class="chips" id="chipR16"></div></div>
     <div class="card"><h2>Quarter-finalists <span class="countpill" id="cQF"></span></h2><div class="chips" id="chipQF"></div></div>
@@ -180,7 +180,7 @@
   <section id="tab-bonus" style="display:none">
     <div class="note">Enter the real answers as they become known — players are auto-awarded 10 points for each exact match. Total-goals checks each player's predicted range. The first-card minute is the tiebreaker (no points; closest wins).</div>
     <div class="card grid2">
-      <div class="field"><label>🏆 Tournament Winner (20 pts)</label><select id="bWinner"></select></div>
+      <div class="field"><label>🏆 Tournament Winner (20 pts)</label><select id="bWinner"></select><div id="winnerHint" class="small muted" style="margin-top:4px"></div></div>
       <div class="field"><label>⚽ Team scoring most goals (10 pts)</label><select id="bMostGoals"></select></div>
       <div class="field"><label>👟 Golden Boot — top scorer (10 pts)</label><input id="bTopScorer" placeholder="e.g. Kylian Mbappe"></div>
       <div class="field"><label># Goals by top scorer (10 pts)</label><input id="bTopScorerGoals" type="number" placeholder="e.g. 8"></div>
@@ -261,6 +261,26 @@ try{ const f=JSON.parse(localStorage.getItem(LS+'_feed')); if(f) feed=f; }catch(
 const fxIndex = {};
 DATA.fixtures.forEach((fx,i)=>{ fxIndex[[fx.home,fx.away].sort().join('|')] = i; });
 
+/* ---- auto knockout detection (from live feed) ---- */
+const CANONSET = new Set(DATA.canon);
+function classifyRound(label){
+  const l=(label||'').toString().toLowerCase();
+  if(l.includes('32')) return 'r32';
+  if(l.includes('16')) return 'r16';
+  if(l.includes('quarter')) return 'qf';
+  if(l.includes('semi')) return 'sf';
+  if(l.includes('3rd')||l.includes('third')||l.includes('place')) return 'third';
+  if(l.includes('final')) return 'fin';
+  return 'group';
+}
+let autoKO={r32:new Set(),r16:new Set(),qf:new Set(),sf:new Set(),fin:new Set()};
+let autoWinner='';
+try{ const a=JSON.parse(localStorage.getItem(LS+'_auto')); if(a){ ['r32','r16','qf','sf','fin'].forEach(k=>autoKO[k]=new Set(a[k]||[])); autoWinner=a.winner||''; } }catch(e){}
+function saveAuto(){ const o={winner:autoWinner}; ['r32','r16','qf','sf','fin'].forEach(k=>o[k]=Array.from(autoKO[k])); try{localStorage.setItem(LS+'_auto', JSON.stringify(o));}catch(e){} }
+// effective "reached" set = teams detected from feed PLUS any the admin ticked manually
+function effSet(key){ const s=new Set(state.ko[key]||[]); (autoKO[key]||new Set()).forEach(t=>s.add(t)); return s; }
+function effWinner(){ return state.bonus.winner || autoWinner || ''; }
+
 // shared write rule: never override a final reading or your manual entries
 function writeFeed(idx,H,A,fin,live,status){
   const prev = feed[idx];
@@ -269,6 +289,16 @@ function writeFeed(idx,H,A,fin,live,status){
   feed[idx] = {h:H,a:A,status:status,final:fin,live:live};
 }
 function applyESPN(j){
+  // build a date->round calendar as a fallback classifier
+  let cal=[];
+  try{ (j.leagues[0].calendar[0].entries||[]).forEach(e=>cal.push({stage:classifyRound(e.label), s:new Date(e.startDate), e:new Date(e.endDate)})); }catch(e){}
+  function stageOf(ev){
+    let st=classifyRound(ev.season && ev.season.slug);
+    if(st==='group'){ const d=new Date(ev.date); for(const c of cal){ if(d>=c.s && d<c.e){ st=c.stage; break; } } }
+    return st;
+  }
+  // recompute auto knockout sets fresh from the full payload each fetch
+  autoKO={r32:new Set(),r16:new Set(),qf:new Set(),sf:new Set(),fin:new Set()};
   (j.events||[]).forEach(ev=>{
     const comp = ev.competitions && ev.competitions[0]; if(!comp) return;
     const cs = comp.competitors||[]; if(cs.length<2) return;
@@ -276,6 +306,21 @@ function applyESPN(j){
     if(!home||!away) return;
     const h = norm(home.team && (home.team.displayName||home.team.name));
     const a = norm(away.team && (away.team.displayName||away.team.name));
+    // --- knockout qualifier detection ---
+    const stage = stageOf(ev);
+    if(['r32','r16','qf','sf','fin'].includes(stage)){
+      if(h && CANONSET.has(h)) autoKO[stage].add(h);
+      if(a && CANONSET.has(a)) autoKO[stage].add(a);
+      if(stage==='fin'){
+        const fst = comp.status && comp.status.type ? comp.status.type.state : '';
+        const fdone = comp.status && comp.status.type ? comp.status.type.completed : false;
+        if(fst==='post' || fdone){
+          const w = cs.find(c=>c.winner===true);
+          if(w){ const wn=norm(w.team && (w.team.displayName||w.team.name)); if(wn && CANONSET.has(wn)) autoWinner=wn; }
+        }
+      }
+    }
+    // --- group-stage score matching ---
     if(!h||!a) return;
     const idx = fxIndex[[h,a].sort().join('|')]; if(idx===undefined) return;
     const st = comp.status && comp.status.type ? comp.status.type.state : '';
@@ -307,6 +352,7 @@ async function fetchFeed(){
   }
   let finals=0; DATA.fixtures.forEach((fx,i)=>{ if(feed[i]&&feed[i].final) finals++; });
   localStorage.setItem(LS+'_feed', JSON.stringify(feed));
+  saveAuto();
   if(any){ setStatus('ok','Live feed reachable · '+finals+' finished results found'); }
   else { setStatus('err','Feed unavailable — using your entered results'); }
   document.getElementById('lastUpd').textContent = 'Updated '+new Date().toLocaleTimeString();
@@ -335,8 +381,7 @@ function scorePlayer(p){
       else { group+=3; correct++; }
     }
   });
-  const setOf=a=>new Set(a.filter(Boolean));
-  const aR32=setOf(state.ko.r32),aR16=setOf(state.ko.r16),aQF=setOf(state.ko.qf),aSF=setOf(state.ko.sf),aFIN=setOf(state.ko.fin);
+  const aR32=effSet('r32'),aR16=effSet('r16'),aQF=effSet('qf'),aSF=effSet('sf'),aFIN=effSet('fin');
   // count each DISTINCT correct pick once (a duplicated team can't score twice)
   const cnt=(picks,act)=>{ const seen=new Set(); let n=0; picks.forEach(t=>{ if(t&&!seen.has(t)){ seen.add(t); if(act.has(t)) n++; } }); return n; };
   const r32=cnt(p.r32,aR32)*5;
@@ -344,7 +389,8 @@ function scorePlayer(p){
   const qf=cnt(p.qf,aQF)*10;
   const sf=cnt(p.sf,aSF)*10;
   const final=cnt(p.final,aFIN)*15;
-  const winner=(state.bonus.winner && p.winner===state.bonus.winner)?20:0;
+  const ew=effWinner();
+  const winner=(ew && p.winner===ew)?20:0;
   let bonus=0; const b=state.bonus, pb=p.bonus;
   if(b.mostGoals && pb.mostGoalsTeam===b.mostGoals) bonus+=10;
   if(b.topScorer){ if(state.scorerOK[p.name]) bonus+=10; }
@@ -445,14 +491,18 @@ function renderKO(){
   const limits={r32:32,r16:16,qf:8,sf:4,fin:2};
   stages.forEach(([key,cid,cnt])=>{
     const c=document.getElementById(cid); c.innerHTML='';
+    const auto=autoKO[key]||new Set();
+    const manual=new Set(state.ko[key]||[]);
     DATA.canon.slice().sort().forEach(team=>{
-      const on=state.ko[key].includes(team);
-      const ch=document.createElement('div'); ch.className='chip'+(on?' on':''); ch.textContent=team;
-      ch.onclick=()=>{ const arr=state.ko[key]; const ix=arr.indexOf(team);
-        if(ix>=0)arr.splice(ix,1); else arr.push(team); adminSave(); renderKO(); renderTable(); };
+      const isAuto=auto.has(team), isManual=manual.has(team), on=isAuto||isManual;
+      const ch=document.createElement('div'); ch.className='chip'+(on?' on':''); ch.textContent=team+(isAuto?' ⚡':'');
+      if(isAuto){ ch.style.cursor='default'; ch.title='Detected automatically from the live feed'; }
+      else { ch.onclick=()=>{ const arr=state.ko[key]; const ix=arr.indexOf(team);
+        if(ix>=0)arr.splice(ix,1); else arr.push(team); adminSave(); renderKO(); renderTable(); }; }
       c.appendChild(ch);
     });
-    document.getElementById(cnt).textContent=state.ko[key].length+' / '+limits[key]+' selected';
+    const eff=new Set([...auto,...manual]);
+    document.getElementById(cnt).textContent=eff.size+' / '+limits[key]+(auto.size?(' · '+auto.size+' auto ⚡'):'');
   });
 }
 
@@ -466,6 +516,8 @@ function renderBonus(){
   document.getElementById('bTotalGoals').value=state.bonus.totalGoals||'';
   document.getElementById('bRedCards').value=state.bonus.redCards||'';
   document.getElementById('bTiebreak').value=state.bonus.tiebreak||'';
+  const wh=document.getElementById('winnerHint');
+  if(wh) wh.textContent = autoWinner ? ('⚡ Live feed detects winner: '+autoWinner+(state.bonus.winner?' — your choice above overrides it':' (used automatically unless you pick above)')) : '';
   const sc=document.getElementById('scorerOverrides'); sc.innerHTML='';
   if(state.bonus.topScorer){
     const target=keyize(state.bonus.topScorer);
@@ -524,7 +576,7 @@ function renderRecords(){
       return '<span class="chip'+(hit?' on':'')+'" style="cursor:default">'+esc(t)+(hit?' ✓':'')+(dup?' ⟲dup':'')+'</span>'; }).join('');
     return '<div class="small muted" style="margin:10px 0 4px">'+label+'</div><div class="pickrow">'+(chips||'<span class="muted small">—</span>')+'</div>';
   }
-  const winHit = state.bonus.winner && p.winner===state.bonus.winner;
+  const ew2=effWinner(); const winHit = ew2 && p.winner===ew2;
   cont.innerHTML=
    '<div class="reccard">'+
      '<div class="rechead"><div class="nm">'+esc(p.name)+' <span class="small muted">· '+rank+suf+' of '+DATA.players.length+'</span></div><div class="pt">'+s.total+' pts</div></div>'+
@@ -534,11 +586,11 @@ function renderRecords(){
    '<div class="reccard"><h2 style="margin-bottom:8px">Game-by-game</h2><div style="overflow:auto"><table class="rec"><thead><tr><th>#</th><th class="l">Match</th><th>Pick</th><th>Result</th><th>Pts</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
    '<div class="reccard"><h2 style="margin-bottom:2px">Knockout &amp; bonus picks</h2>'+
      '<div class="small muted">Green ✓ = correct once that stage is set. ⟲dup = duplicate pick (only scores once).</div>'+
-     koLine('Reached R32 (5 each)',p.r32,state.ko.r32)+
-     koLine('Last 16 (8 each)',p.r16,state.ko.r16)+
-     koLine('Quarter-finals (10 each)',p.qf,state.ko.qf)+
-     koLine('Semi-finals (10 each)',p.sf,state.ko.sf)+
-     koLine('Finalists (15 each)',p.final,state.ko.fin)+
+     koLine('Reached R32 (5 each)',p.r32,Array.from(effSet('r32')))+
+     koLine('Last 16 (8 each)',p.r16,Array.from(effSet('r16')))+
+     koLine('Quarter-finals (10 each)',p.qf,Array.from(effSet('qf')))+
+     koLine('Semi-finals (10 each)',p.sf,Array.from(effSet('sf')))+
+     koLine('Finalists (15 each)',p.final,Array.from(effSet('fin')))+
      '<div class="small muted" style="margin:10px 0 4px">Winner (20)</div><div class="pickrow"><span class="chip'+(winHit?' on':'')+'" style="cursor:default">'+esc(p.winner||'—')+(winHit?' ✓':'')+'</span></div>'+
      '<div class="small muted" style="margin:10px 0 4px">Bonus answers</div>'+
      '<div class="pickrow small">'+
